@@ -1,0 +1,32 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@page {
+  size: letter portrait;
+  margin: 0 !important;
+}
+
+@media print {
+  html, body {
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 215.9mm;
+  }
+  * { visibility: hidden; }
+  #invoice-print, #invoice-print * { visibility: visible; }
+  #invoice-print {
+    position: absolute !important;
+    top: 8mm !important;
+    left: 8mm !important;
+    width: 199.9mm !important;
+    max-width: none !important;
+    box-sizing: border-box !important;
+  }
+  .no-print { display: none !important; }
+}
+
+.invoice-page {
+  font-family: Arial, sans-serif;
+  font-size: 11px;
+}

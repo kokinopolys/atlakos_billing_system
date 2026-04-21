@@ -1,0 +1,92 @@
+====================================================
+  MRS DEVS S. DE R. L. — Sistema de Facturación
+====================================================
+
+REQUISITO PREVIO: Node.js instalado
+  Descargar desde: https://nodejs.org/  (versión LTS recomendada)
+
+====================================================
+PASO 1 — Instalar dependencias (solo la primera vez)
+====================================================
+
+Abrir DOS terminales separadas:
+
+  TERMINAL 1 — Backend:
+    cd "C:\Users\oscar.salinas\OneDrive - Farmavalue\Escritorio\Facturacion\backend"
+    npm install
+
+  TERMINAL 2 — Frontend:
+    cd "C:\Users\oscar.salinas\OneDrive - Farmavalue\Escritorio\Facturacion\frontend"
+    npm install
+
+====================================================
+PASO 2 — Iniciar la aplicación
+====================================================
+
+  TERMINAL 1 — Backend (puerto 3001):
+    cd "C:\Users\oscar.salinas\OneDrive - Farmavalue\Escritorio\Facturacion\backend"
+    npm run dev
+
+  TERMINAL 2 — Frontend (puerto 5173):
+    cd "C:\Users\oscar.salinas\OneDrive - Farmavalue\Escritorio\Facturacion\frontend"
+    npm run dev
+
+  Luego abrir: http://localhost:5173
+
+====================================================
+ESTRUCTURA DEL PROYECTO
+====================================================
+
+  backend/
+    src/
+      app.js              — Servidor Express (puerto 3001)
+      db/database.js      — SQLite (better-sqlite3)
+      routes/config.js    — GET/PUT /api/config
+      routes/invoices.js  — CRUD /api/invoices
+      services/numberToWords.js — Conversión numérica español
+    data/facturacion.db   — Base de datos (se crea automáticamente)
+    package.json
+
+  frontend/
+    src/
+      App.jsx             — Rutas y sidebar
+      main.jsx            — Entry point React 18
+      index.css           — Tailwind + estilos de impresión
+      components/
+        InvoiceTemplate.jsx — Factura formato SAR Honduras
+      pages/
+        Dashboard.jsx     — Listado de facturas
+        NewInvoice.jsx    — Formulario + vista previa
+        ViewInvoice.jsx   — Ver e imprimir factura
+        Settings.jsx      — Configuración empresa/fiscal
+      utils/
+        api.js            — Cliente HTTP hacia el backend
+    index.html
+    vite.config.js        — Proxy /api → localhost:3001
+    tailwind.config.js
+    postcss.config.js
+    package.json
+
+====================================================
+CÁLCULO DE ISV (Honduras 15%)
+====================================================
+
+  ISV No Incluido (precio pre-impuesto):
+    subtotalGravado = suma de items
+    total = subtotalGravado / 0.85
+    ISV = total - subtotalGravado
+
+  ISV Incluido (precio con ISV):
+    total = suma de items
+    subtotalGravado = total / 1.15
+    ISV = total - subtotalGravado
+
+====================================================
+BASE DE DATOS
+====================================================
+
+  SQLite en: backend/data/facturacion.db
+  Se crea automáticamente al iniciar el backend.
+  Config inicial incluye todos los datos de MRS DEVS.
+
+====================================================

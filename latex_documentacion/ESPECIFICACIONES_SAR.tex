@@ -1,0 +1,497 @@
+\documentclass[12pt, letterpaper]{article}
+
+% ── Paquetes ──────────────────────────────────────────────────────────────────
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[spanish]{babel}
+\usepackage{geometry}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{longtable}
+\usepackage{xcolor}
+\usepackage{colortbl}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+\usepackage{enumitem}
+\usepackage{hyperref}
+\usepackage{graphicx}
+\usepackage{tabularx}
+\usepackage{multirow}
+\usepackage{amsmath}
+\usepackage{lmodern}
+\usepackage{microtype}
+
+% ── Márgenes ──────────────────────────────────────────────────────────────────
+\geometry{
+  top    = 2.5cm,
+  bottom = 2.5cm,
+  left   = 3cm,
+  right  = 2.5cm
+}
+
+% ── Colores ───────────────────────────────────────────────────────────────────
+\definecolor{azulSAR}{RGB}{29, 78, 216}
+\definecolor{grisCabecera}{RGB}{243, 244, 246}
+\definecolor{grisLinea}{RGB}{209, 213, 219}
+\definecolor{azulClaro}{RGB}{219, 234, 254}
+
+% ── Encabezado y pie de página ────────────────────────────────────────────────
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small\textcolor{azulSAR}{\textbf{DEVS MRS S. DE R. L.}}}
+\fancyhead[R]{\small\textcolor{gray}{Especificaciones Técnicas --- Sistema de Facturación}}
+\fancyfoot[C]{\small\thepage}
+\fancyfoot[R]{\small\textcolor{gray}{Uso interno / SAR Honduras}}
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\footrulewidth}{0.4pt}
+
+% ── Títulos de sección ────────────────────────────────────────────────────────
+\titleformat{\section}{\large\bfseries\color{azulSAR}}{}{0em}{}[\titlerule]
+\titleformat{\subsection}{\normalsize\bfseries\color{azulSAR}}{}{0em}{}
+
+% ── Hipervínculos ─────────────────────────────────────────────────────────────
+\hypersetup{
+  colorlinks = true,
+  linkcolor  = azulSAR,
+  urlcolor   = azulSAR,
+}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\begin{document}
+
+% ── PORTADA ───────────────────────────────────────────────────────────────────
+\begin{titlepage}
+  \centering
+  \vspace*{2cm}
+
+  {\Huge\bfseries\color{azulSAR} DEVS MRS S. DE R. L.\par}
+  \vspace{0.5cm}
+  {\large Col.\ Las Torres, Contiguo a la Puma B34 S1\\
+         Tegucigalpa, M.D.C., Honduras\par}
+
+  \vspace{2cm}
+  \rule{0.8\linewidth}{1.5pt}
+  \vspace{0.4cm}
+
+  {\LARGE\bfseries Especificaciones Técnicas\\[0.3cm]
+   Sistema Electrónico de Facturación\par}
+
+  \vspace{0.4cm}
+  \rule{0.8\linewidth}{1.5pt}
+
+  \vspace{2cm}
+  {\large\textbf{Documento preparado para:}\\[0.3cm]
+   \textbf{Servicio de Administración de Rentas (SAR)}\\
+   República de Honduras\par}
+
+  \vfill
+
+  \begin{tabular}{ll}
+    \textbf{Versión:}       & 1.0                    \\[4pt]
+    \textbf{Fecha:}         & Abril 2026             \\[4pt]
+    \textbf{Clasificación:} & Uso Interno / Registro \\
+  \end{tabular}
+\end{titlepage}
+
+% ── TABLA DE CONTENIDOS ───────────────────────────────────────────────────────
+\tableofcontents
+\newpage
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Información General de la Empresa}
+
+\begin{tabularx}{\linewidth}{>{\bfseries}lX}
+  \toprule
+  Razón Social          & DEVS MRS S. DE R. L.                              \\
+  Dirección             & Col.\ Las Torres, Contiguo a la Puma B34 S1,
+                          Tegucigalpa, M.D.C., Honduras                      \\
+  RTN                   & (Número de RTN de la empresa)                     \\
+  Actividad Económica   & Servicios de Desarrollo de Software y Tecnología  \\
+  Régimen Tributario    & Régimen General                                   \\
+  Obligación Tributaria & ISV 15\% --- Impuesto Sobre Ventas                \\
+  Moneda                & Lempira Hondureño (HNL)                           \\
+  \bottomrule
+\end{tabularx}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Descripción del Sistema}
+
+El sistema es una aplicación web de gestión de facturación desarrollada
+internamente por DEVS MRS S.\ de R.\ L., diseñada para cumplir con los
+requerimientos del formato de factura autorizado por el SAR de Honduras.
+Permite la emisión de \textbf{Facturas Fiscales} y \textbf{Cotizaciones},
+con flujo de conversión entre ambos tipos de documento.
+
+\subsection{Tipos de Documento Soportados}
+
+\begin{enumerate}[label=\textbf{\arabic*.}]
+  \item \textbf{Factura} --- Documento fiscal con número correlativo único,
+        CAI, RTN, rango autorizado y fecha límite de emisión.
+  \item \textbf{Cotización} --- Documento pre-venta no fiscal; puede ser
+        aceptada, rechazada o convertida en Factura.
+\end{enumerate}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Arquitectura Tecnológica}
+
+\subsection{Tecnologías Utilizadas}
+
+\begin{tabularx}{\linewidth}{>{\bfseries}l l X}
+  \toprule
+  \rowcolor{azulClaro}
+  Capa              & Tecnología              & Versión / Descripción        \\
+  \midrule
+  Backend           & Node.js                 & v22 LTS (runtime JavaScript) \\
+  Framework API     & Express.js              & v4 (API REST HTTP)           \\
+  Base de Datos     & NeDB (nedb-promises)    & Base de datos NoSQL embebida,
+                                               archivos \texttt{.db} en disco \\
+  Frontend          & React                   & v18                          \\
+  Bundler           & Vite                    & v5                           \\
+  Estilos           & Tailwind CSS            & v3                           \\
+  Lenguaje          & JavaScript (ES Modules) & ECMAScript 2022+             \\
+  Sistema Operativo & Windows / Linux         & Multiplataforma              \\
+  \bottomrule
+\end{tabularx}
+
+\subsection{Arquitectura de la Aplicación}
+
+\begin{itemize}
+  \item \textbf{Tipo:} Aplicación web cliente-servidor (SPA + REST API).
+  \item \textbf{Comunicación:} HTTP/1.1, JSON en todos los endpoints.
+  \item \textbf{Puerto API:} 3001 (configurable mediante variable de entorno).
+  \item \textbf{Puerto Frontend:} 5173 en desarrollo; se puede servir de
+        forma estática en producción.
+  \item \textbf{Despliegue:} Servidor local o nube privada; no requiere
+        base de datos externa.
+\end{itemize}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Base de Datos}
+
+\subsection{Motor de Almacenamiento}
+
+Se utiliza \textbf{NeDB} (Node Embedded Database), una base de datos NoSQL
+embebida que almacena los datos en archivos de texto plano en disco
+(\texttt{.db}). No requiere instalación de servidor de base de datos externo.
+
+\subsection{Colecciones (Datastores)}
+
+\begin{tabularx}{\linewidth}{>{\bfseries}l X}
+  \toprule
+  Colección              & Descripción                                    \\
+  \midrule
+  \texttt{invoices.db}   & Almacena facturas y cotizaciones               \\
+  \texttt{config.db}     & Almacena la configuración de la empresa
+                           (CAI, RTN, rangos autorizados, etc.)           \\
+  \bottomrule
+\end{tabularx}
+
+\subsection{Ruta de Almacenamiento}
+
+\begin{verbatim}
+backend/src/db/invoices.db
+backend/src/db/config.db
+\end{verbatim}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Formato de Numeración de Documentos}
+
+\subsection{Factura Fiscal}
+
+El número de factura sigue el formato oficial establecido por el SAR:
+
+\begin{center}
+  \Large\texttt{000-001-01-XXXXXXXX}
+\end{center}
+
+\begin{tabularx}{\linewidth}{>{\ttfamily\bfseries}l X}
+  \toprule
+  Segmento   & Significado                                       \\
+  \midrule
+  000        & Identificador de establecimiento                  \\
+  001        & Punto de emisión                                  \\
+  01         & Tipo de documento (01 = Factura)                  \\
+  XXXXXXXX   & Número correlativo de 8 dígitos (00000001$\ldots$)\\
+  \bottomrule
+\end{tabularx}
+
+\subsection{Cotización}
+
+\begin{center}
+  \Large\texttt{COT-XXXXXXXX}
+\end{center}
+
+Las cotizaciones usan el prefijo \texttt{COT-} seguido de un número
+correlativo independiente del correlativo de facturas.
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Campos del Documento de Factura}
+
+\subsection{Datos del Emisor (Empresa)}
+
+\begin{tabularx}{\linewidth}{>{\bfseries}l X}
+  \toprule
+  Campo                     & Descripción                              \\
+  \midrule
+  Razón Social              & Nombre de la empresa emisora             \\
+  Dirección                 & Dirección fiscal de la empresa           \\
+  Teléfono                  & Número de teléfono                       \\
+  Correo Electrónico        & Email de contacto                        \\
+  RTN                       & Registro Tributario Nacional de la empresa\\
+  CAI                       & Código de Autorización de Impresión
+                              (emitido por el SAR)                      \\
+  Rango Autorizado (Desde)  & Primer número de factura autorizado      \\
+  Rango Autorizado (Hasta)  & Último número de factura autorizado      \\
+  Fecha Límite de Emisión   & Fecha máxima para emitir dentro del rango\\
+  \bottomrule
+\end{tabularx}
+
+\subsection{Datos del Cliente (Adquirente)}
+
+\begin{tabularx}{\linewidth}{>{\bfseries}l X}
+  \toprule
+  Campo       & Descripción                                            \\
+  \midrule
+  Señor(es)   & Nombre completo o razón social del cliente             \\
+  Dirección   & Dirección del cliente                                  \\
+  RTN         & Registro Tributario Nacional del cliente (opcional)    \\
+  \bottomrule
+\end{tabularx}
+
+\subsection{Datos Fiscales del Documento}
+
+\begin{tabularx}{\linewidth}{>{\bfseries}l X}
+  \toprule
+  Campo                         & Descripción                          \\
+  \midrule
+  Número de Factura             & Correlativo en formato SAR           \\
+  Fecha                         & Fecha de emisión                     \\
+  Lugar de Emisión              & Tegucigalpa, M.D.C.                  \\
+  No.\ O/C Exenta               & Orden de compra exenta (si aplica)   \\
+  No.\ Registro de Exonerado    & Registro de exoneración              \\
+  No.\ Registro de la SAG       & Registro SAG (sector agropecuario)   \\
+  \bottomrule
+\end{tabularx}
+
+\subsection{Detalle de Ítems}
+
+\begin{tabularx}{\linewidth}{>{\bfseries}l X}
+  \toprule
+  Campo          & Descripción                                         \\
+  \midrule
+  Cantidad       & Número de unidades                                  \\
+  Descripción    & Descripción del bien o servicio                     \\
+  Precio Unitario& Precio por unidad en Lempiras                       \\
+  Valor Total    & Cantidad $\times$ Precio Unitario                   \\
+  \bottomrule
+\end{tabularx}
+
+\subsection{Totales y Cálculos Fiscales}
+
+\begin{tabularx}{\linewidth}{>{\bfseries}l X}
+  \toprule
+  Campo                        & Descripción                            \\
+  \midrule
+  Venta Exonerada              & Monto exento de ISV por exoneración    \\
+  Sub-Total Exento             & Subtotal de bienes/servicios exentos   \\
+  Descuentos y Rebajas         & Total de descuentos aplicados          \\
+  Sub-Total Gravado            & Base imponible para ISV                \\
+  15\% Impuesto Sobre Ventas   & ISV calculado sobre el gravado         \\
+  \textbf{TOTAL}               & Total a pagar en Lempiras              \\
+  La Suma de                   & Total en letras (Lempiras)             \\
+  \bottomrule
+\end{tabularx}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Cálculo del ISV (Impuesto Sobre Ventas)}
+
+El sistema soporta dos modalidades de cálculo del ISV del 15\%:
+
+\subsection{Modalidad 1: ISV No Incluido en el Precio}
+
+El precio ingresado \textbf{no} incluye el impuesto; el ISV se agrega al total.
+
+\begin{align}
+  \text{Suma Bruta}        &= \sum_{i} (\text{Cantidad}_i \times \text{PrecioUnit}_i) \\
+  \text{SubTotalGravado}   &= \text{SumaBruta} - \text{VentaExonerada}
+                              - \text{SubtotalExento} - \text{Descuentos}             \\
+  \text{ISV}               &= \text{SubTotalGravado} \times 0.15                      \\
+  \text{TOTAL}             &= \text{VentaExonerada} + \text{SubtotalExento}
+                              + \text{SubTotalGravado} + \text{ISV}
+\end{align}
+
+\subsection{Modalidad 2: ISV Incluido en el Precio}
+
+El precio ingresado \textbf{ya incluye} el ISV; se extrae la base gravable.
+
+\begin{align}
+  \text{BrutoConISV}       &= \text{SumaBruta} - \text{VentaExonerada}
+                              - \text{SubtotalExento} - \text{Descuentos}             \\
+  \text{SubTotalGravado}   &= \frac{\text{BrutoConISV}}{1.15}                         \\
+  \text{ISV}               &= \text{BrutoConISV} - \text{SubTotalGravado}             \\
+  \text{TOTAL}             &= \text{VentaExonerada} + \text{SubtotalExento}
+                              + \text{BrutoConISV}
+\end{align}
+
+\textit{Nota: El factor divisor $1.15$ equivale a $1 + 0.15$, cumpliendo
+la norma de desglose de ISV incluido.}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Flujo de Documentos}
+
+\subsection{Factura Directa}
+
+\begin{center}
+  \textbf{Nueva Factura} $\longrightarrow$ \textbf{Emitida}
+  $\longrightarrow$ \textit{[Anulada (opcional)]}
+\end{center}
+
+\subsection{Flujo Cotización $\rightarrow$ Factura}
+
+\begin{center}
+  \textbf{Nueva Cotización (pendiente)}
+  $\longrightarrow$ \textbf{Aceptada / Rechazada}
+  $\longrightarrow$ \textbf{Convertir a Factura}
+  $\longrightarrow$ \textbf{Factura Emitida}
+\end{center}
+
+\begin{itemize}
+  \item La cotización queda en estado \textit{facturada} y almacena la
+        referencia al número de factura generado.
+  \item La factura resultante almacena \texttt{from\_cotizacion\_number}
+        para trazabilidad.
+  \item No se puede editar una cotización ya \textit{facturada}.
+\end{itemize}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{API REST del Sistema}
+
+\begin{longtable}{>{\ttfamily\bfseries}l l X}
+  \toprule
+  \normalfont\textbf{Endpoint}   & \textbf{Método} & \textbf{Descripción} \\
+  \midrule
+  \endhead
+  /api/invoices                  & GET    & Listar facturas (filtros: doc\_type, from, to) \\
+  /api/invoices                  & POST   & Crear factura o cotización                    \\
+  /api/invoices/:id              & GET    & Obtener documento por ID                      \\
+  /api/invoices/:id              & PUT    & Editar cotización (si está pendiente)         \\
+  /api/invoices/:id/status       & PATCH  & Cambiar estado de cotización                  \\
+  /api/invoices/:id/convert      & POST   & Convertir cotización a factura                \\
+  /api/invoices/:id              & DELETE & Anular documento (soft delete)                \\
+  /api/config                    & GET    & Obtener configuración de empresa              \\
+  /api/config                    & PUT    & Actualizar configuración de empresa           \\
+  \bottomrule
+\end{longtable}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Seguridad y Control de Datos}
+
+\begin{itemize}
+  \item \textbf{Eliminación lógica (Soft Delete):} Los documentos anulados
+        no se eliminan físicamente; se marca el campo
+        \texttt{status = 'anulada'} para mantener auditoría.
+  \item \textbf{Integridad referencial:} Una factura generada desde
+        cotización almacena el ID y número de la cotización original.
+  \item \textbf{Consecutivo correlativo:} El sistema incrementa
+        automáticamente el número de factura dentro del rango autorizado.
+  \item \textbf{Validación de rangos:} El sistema está preparado para
+        verificar que el correlativo no exceda el rango autorizado por el SAR.
+  \item \textbf{Sin conexión a internet requerida:} El sistema opera
+        localmente; los datos nunca salen de la red interna.
+\end{itemize}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Generación de PDF e Impresión}
+
+\begin{itemize}
+  \item El sistema genera el PDF mediante la función de impresión del
+        navegador web (\textit{Ctrl+P $\rightarrow$ Guardar como PDF}).
+  \item El formato de página es \textbf{carta (Letter)} en orientación
+        vertical, con márgenes configurados vía CSS \texttt{@page}.
+  \item La hoja impresa incluye todos los campos obligatorios del SAR:
+        CAI, RTN, rango autorizado, fecha límite de emisión, totales
+        desglosados e ISV.
+  \item Las cotizaciones impresas \textbf{no muestran} CAI ni información
+        fiscal, al ser documentos pre-venta.
+\end{itemize}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Requisitos para Registro y Autorización SAR}
+
+A continuación se presenta una lista de los documentos e información
+que típicamente solicita el SAR de Honduras para la autorización de
+correlativo de facturas:
+
+\subsection{Documentos Legales de la Empresa}
+
+\begin{enumerate}[label=\textbf{\arabic*.}]
+  \item Escritura de constitución de la empresa (copia autenticada).
+  \item RTN de la empresa (vigente).
+  \item RTN del representante legal.
+  \item Copia de identidad del representante legal.
+  \item Poder de representación (si aplica).
+  \item Constancia de inscripción en el SAR.
+  \item Declaración de Impuesto Sobre Ventas (ISV) al día.
+  \item Declaración del Impuesto Sobre la Renta (ISR) al día.
+\end{enumerate}
+
+\subsection{Información del Sistema de Facturación}
+
+\begin{enumerate}[label=\textbf{\arabic*.}]
+  \item \textbf{Tipo de sistema:} Electrónico (aplicación web).
+  \item \textbf{Tecnología:} Node.js + React (JavaScript).
+  \item \textbf{Formato de correlativo:} \texttt{000-001-01-XXXXXXXX}.
+  \item \textbf{Campos incluidos:} CAI, RTN emisor, RTN adquirente,
+        fecha, rango, venta gravada, exonerada, exenta, ISV 15\%,
+        total, suma en letras.
+  \item \textbf{Respaldo de datos:} Archivos locales \texttt{.db}
+        (NeDB); posibilidad de exportación a CSV.
+  \item \textbf{Impresión/PDF:} Generación vía navegador web en
+        formato carta.
+\end{enumerate}
+
+\subsection{Información para Solicitud de CAI}
+
+\begin{tabularx}{\linewidth}{>{\bfseries}l X}
+  \toprule
+  Dato Requerido           & Descripción                                  \\
+  \midrule
+  Razón Social             & DEVS MRS S. DE R. L.                         \\
+  RTN                      & RTN de la empresa                            \\
+  Número de Establecimientos & 1 (sede principal)                          \\
+  Cantidad de Folios       & Cantidad de facturas a autorizar             \\
+  Serie / Correlativo Desde& Número inicial del rango (ej.\ 00000001)     \\
+  Serie / Correlativo Hasta& Número final del rango (ej.\ 00001000)       \\
+  Tipo de Documento        & Factura Comercial                            \\
+  Modalidad de Facturación & Sistema Computarizado / Electrónico          \\
+  \bottomrule
+\end{tabularx}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Glosario de Términos}
+
+\begin{tabularx}{\linewidth}{>{\bfseries}l X}
+  \toprule
+  Término  & Definición                                                   \\
+  \midrule
+  SAR      & Servicio de Administración de Rentas de Honduras             \\
+  RTN      & Registro Tributario Nacional                                 \\
+  CAI      & Código de Autorización de Impresión                          \\
+  ISV      & Impuesto Sobre Ventas (15\%)                                 \\
+  ISR      & Impuesto Sobre la Renta                                      \\
+  SPA      & Single Page Application (aplicación web de página única)    \\
+  API REST & Interfaz de programación basada en HTTP con JSON             \\
+  NeDB     & Node Embedded Database (base de datos embebida en Node.js)  \\
+  HNL      & Lempira Hondureño (moneda nacional)                          \\
+  \bottomrule
+\end{tabularx}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\vspace{1cm}
+\begin{center}
+  \rule{0.5\linewidth}{0.5pt}\\[0.3cm]
+  {\small Documento generado por DEVS MRS S.\ de R.\ L.\ --- Abril 2026\\
+  Para uso en trámites de registro y autorización ante el SAR de Honduras.}
+\end{center}
+
+\end{document}
