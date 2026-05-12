@@ -41,6 +41,15 @@ function getTransporter(emailConfig) {
       auth: { user, pass },
     });
   }
+  if (provider === 'resend') {
+    // pass = Resend API key (re_xxx...), user = verified sender email
+    return nodemailer.createTransport({
+      host: 'smtp.resend.com',
+      port: 465,
+      secure: true,
+      auth: { user: 'resend', pass },
+    });
+  }
   // Custom SMTP
   return nodemailer.createTransport({
     host: host || 'smtp.gmail.com',

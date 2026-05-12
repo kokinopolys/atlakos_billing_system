@@ -176,6 +176,7 @@ export default function Settings() {
               <select value={form.smtp_provider || 'gmail'} onChange={e => handleChange('smtp_provider', e.target.value)} className={inputCls}>
                 <option value="gmail">Gmail (App Password)</option>
                 <option value="yahoo">Yahoo</option>
+                <option value="resend">Resend (API Key)</option>
                 <option value="custom">SMTP Personalizado</option>
               </select>
             </div>
@@ -203,6 +204,11 @@ export default function Settings() {
           {form.smtp_provider === 'gmail' && (
             <div className="mx-6 mb-4 bg-blue-50 border border-blue-200 rounded-lg px-4 py-2 text-xs text-blue-700">
               Para Gmail, usa una <strong>App Password</strong> (no tu contraseña normal). Habilítala en: Google Account → Seguridad → Verificación en 2 pasos → Contraseñas de aplicación.
+            </div>
+          )}
+          {form.smtp_provider === 'resend' && (
+            <div className="mx-6 mb-4 bg-purple-50 border border-purple-200 rounded-lg px-4 py-2 text-xs text-purple-700">
+              Para Resend: <strong>Usuario</strong> = tu email remitente verificado en resend.com. <strong>Contraseña</strong> = tu API Key (<code>re_...</code>). Asegúrate de verificar el dominio en resend.com/domains.
             </div>
           )}
           <div className="px-6 pb-5">

@@ -1,61 +1,44 @@
-const Datastore = require('nedb-promises');
-const path = require('path');
-const fs = require('fs');
+require('dotenv').config();
 const bcrypt = require('bcryptjs');
+const crypto = require('crypto');
 const { nowHN } = require('../utils/time');
 
-const dataDir = path.join(__dirname, '..', '..', 'data');
-if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
+const USE_MONGO = !!process.env.MONGODB_URI;
 
-const invoicesDb = Datastore.create({
-  filename: path.join(dataDir, 'invoices.db'),
-  autoload: true,
-});
+let invoicesDb, configDb, usersDb, clientesDb, serviciosDb, gastosDb,
+    cxcDb, cxpDb, empleadosDb, vouchersDb;
 
-const configDb = Datastore.create({
-  filename: path.join(dataDir, 'config.db'),
-  autoload: true,
-});
+// ──────────────────────────────────────────────────────────────────────────────
+//  MongoDB wrapper — NeDB-compatible API
+// ──────────────────────────────────────────────────────────────────────────────
 
-const usersDb = Datastore.create({
-  filename: path.join(dataDir, 'users.db'),
-  autoload: true,
-});
+class MongoCollection {
+  constructor(col) { this._col = col; }
 
-const clientesDb = Datastore.create({
-  filename: path.join(dataDir, 'clientes.db'),
-  autoload: true,
-});
+  find(query = {})   { return this._col.find(query).toArray(); }
+  findOne(query = {}) { return this._col.findOne(query); }
 
-const serviciosDb = Datastore.create({
-  filename: path.join(dataDir, 'servicios.db'),
-  autoload: true,
-});
+  async insert(doc) {
+    const d = { ...doc };
+    if (!d._id) d._id = crypto.randomUUID();
+    await this._col.insertOne(d);
+    return d;
+  }
 
-const gastosDb = Datastore.create({
-  filename: path.join(dataDir, 'gastos.db'),
-  autoload: true,
-});
+  update(query, update, opts = {}) {
+    const fn = opts.multi ? 'updateMany' : 'updateOne';
+    return this._col[fn](query, update, { upsert: !!opts.upsert });
+  }
 
-const cxcDb = Datastore.create({
-  filename: path.join(dataDir, 'cxc.db'),
-  autoload: true,
-});
+  remove(query, opts = {}) {
+    const fn = opts.multi ? 'deleteMany' : 'deleteOne';
+    return this._col[fn](query);
+  }
+}
 
-const cxpDb = Datastore.create({
-  filename: path.join(dataDir, 'cxp.db'),
-  autoload: true,
-});
-
-const empleadosDb = Datastore.create({
-  filename: path.join(dataDir, 'empleados.db'),
-  autoload: true,
-});
-
-const vouchersDb = Datastore.create({
-  filename: path.join(dataDir, 'vouchers.db'),
-  autoload: true,
-});
+// ──────────────────────────────────────────────────────────────────────────────
+//  Seed data
+// ──────────────────────────────────────────────────────────────────────────────
 
 const DEFAULTS = [
   ['company_name',          'MRS DEVS S. DE R. L.'],
@@ -84,16 +67,72 @@ async function seedUsers() {
   const existing = await usersDb.findOne({ username: 'devs.mrs' });
   if (!existing) {
     const hash = await bcrypt.hash('devs.mrs1@', 10);
-    await usersDb.insert({
-      username: 'devs.mrs',
-      password: hash,
-      name: 'Administrador',
-      createdAt: nowHN(),
-    });
+    await usersDb.insert({ username: 'devs.mrs', password: hash, name: 'Administrador', createdAt: nowHN() });
   }
 }
 
-seedConfig().catch(console.error);
-seedUsers().catch(console.error);
+// ──────────────────────────────────────────────────────────────────────────────
+//  Initialization
+// ──────────────────────────────────────────────────────────────────────────────
 
-module.exports = { invoicesDb, configDb, usersDb, clientesDb, serviciosDb, gastosDb, cxcDb, cxpDb, empleadosDb, vouchersDb };
+async function initMongo() {
+  const { MongoClient } = require('mongodb');
+  const client = new MongoClient(process.env.MONGODB_URI);
+  await client.connect();
+  const db = client.db();
+  const make = (n) => new MongoCollection(db.collection(n));
+  invoicesDb  = make('invoices');
+  configDb    = make('config');
+  usersDb     = make('users');
+  clientesDb  = make('clientes');
+  serviciosDb = make('servicios');
+  gastosDb    = make('gastos');
+  cxcDb       = make('cxc');
+  cxpDb       = make('cxp');
+  empleadosDb = make('empleados');
+  vouchersDb  = make('vouchers');
+  console.log('Connected to MongoDB Atlas');
+}
+
+function initNeDB() {
+  const Datastore = require('nedb-promises');
+  const path = require('path');
+  const fs = require('fs');
+  const dataDir = path.join(__dirname, '..', '..', 'data');
+  if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
+  const make = (n) => Datastore.create({ filename: path.join(dataDir, n + '.db'), autoload: true });
+  invoicesDb  = make('invoices');
+  configDb    = make('config');
+  usersDb     = make('users');
+  clientesDb  = make('clientes');
+  serviciosDb = make('servicios');
+  gastosDb    = make('gastos');
+  cxcDb       = make('cxc');
+  cxpDb       = make('cxp');
+  empleadosDb = make('empleados');
+  vouchersDb  = make('vouchers');
+  console.log('Using NeDB (local file storage)');
+}
+
+// ready resolves once DB is initialized and seeds are done
+const ready = (async () => {
+  if (USE_MONGO) await initMongo();
+  else           initNeDB();
+  await seedConfig().catch(console.error);
+  await seedUsers().catch(console.error);
+})();
+
+// Getters so that when routes destructure after ready resolves, they get the real instances
+module.exports = {
+  ready,
+  get invoicesDb()  { return invoicesDb; },
+  get configDb()    { return configDb; },
+  get usersDb()     { return usersDb; },
+  get clientesDb()  { return clientesDb; },
+  get serviciosDb() { return serviciosDb; },
+  get gastosDb()    { return gastosDb; },
+  get cxcDb()       { return cxcDb; },
+  get cxpDb()       { return cxpDb; },
+  get empleadosDb() { return empleadosDb; },
+  get vouchersDb()  { return vouchersDb; },
+};

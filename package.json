@@ -1,0 +1,11 @@
+{
+  "name": "mrs-devs-facturacion",
+  "version": "1.0.0",
+  "scripts": {
+    "build": "cd frontend && npm install && npm run build && cd ../backend && npm install",
+    "start": "node backend/src/app.js"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
