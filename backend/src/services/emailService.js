@@ -68,6 +68,33 @@ function getTransporter(emailConfig) {
       },
     };
   }
+  if (provider === 'brevo') {
+    // Brevo HTTP API — works on Render, no domain verification needed
+    return {
+      sendMail: async ({ from, to, subject, html }) => {
+        const nameMatch = from.match(/^"?([^"<]+)"?\s*</);
+        const emailMatch = from.match(/<([^>]+)>/);
+        const senderName  = nameMatch  ? nameMatch[1].trim()  : user;
+        const senderEmail = emailMatch ? emailMatch[1].trim() : user;
+        const response = await fetch('https://api.brevo.com/v3/smtp/email', {
+          method: 'POST',
+          headers: {
+            'api-key': pass,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            sender:      { name: senderName, email: senderEmail },
+            to:          [{ email: to }],
+            subject,
+            htmlContent: html,
+          }),
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.message || `Brevo error ${response.status}`);
+        return data;
+      },
+    };
+  }
   // Custom SMTP — add timeout to avoid hanging on blocked ports
   return nodemailer.createTransport({
     host: host || 'smtp.gmail.com',

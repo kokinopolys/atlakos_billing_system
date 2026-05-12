@@ -174,6 +174,7 @@ export default function Settings() {
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Proveedor</label>
               <select value={form.smtp_provider || 'gmail'} onChange={e => handleChange('smtp_provider', e.target.value)} className={inputCls}>
+                <option value="brevo">Brevo (API Key) — Recomendado</option>
                 <option value="gmail">Gmail (App Password)</option>
                 <option value="yahoo">Yahoo</option>
                 <option value="resend">Resend (API Key)</option>
@@ -204,6 +205,11 @@ export default function Settings() {
           {form.smtp_provider === 'gmail' && (
             <div className="mx-6 mb-4 bg-blue-50 border border-blue-200 rounded-lg px-4 py-2 text-xs text-blue-700">
               Para Gmail, usa una <strong>App Password</strong> (no tu contraseña normal). Habilítala en: Google Account → Seguridad → Verificación en 2 pasos → Contraseñas de aplicación.
+            </div>
+          )}
+          {form.smtp_provider === 'brevo' && (
+            <div className="mx-6 mb-4 bg-green-50 border border-green-200 rounded-lg px-4 py-2 text-xs text-green-800">
+              <strong>Usuario</strong> = tu email remitente verificado en Brevo. <strong>Contraseña</strong> = tu API Key (<code>xkeysib-...</code>). Verifica el remitente en <strong>Brevo → Senders & Domains</strong>.
             </div>
           )}
           {form.smtp_provider === 'resend' && (

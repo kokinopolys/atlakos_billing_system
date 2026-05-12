@@ -13,7 +13,8 @@ function StatusBadge({ status }) {
 }
 
 const PROVIDERS = [
-  { value: 'outlook_oauth2', label: 'Outlook Personal (OAuth2 — Recomendado)' },
+  { value: 'brevo',          label: 'Brevo (API Key) — Recomendado' },
+  { value: 'outlook_oauth2', label: 'Outlook Personal (OAuth2)' },
   { value: 'gmail',          label: 'Gmail (App Password)' },
   { value: 'resend',         label: 'Resend (API Key)' },
   { value: 'yahoo',          label: 'Yahoo' },
@@ -262,6 +263,11 @@ function SendEmailModal({ cotizacion, onClose, onSent }) {
                   {provider === 'gmail' && (
                     <p className="text-xs text-amber-600 bg-amber-50 rounded-lg px-3 py-2">
                       Usa una <strong>App Password</strong> (no tu contraseña normal). Actívala en: Google Account → Seguridad → Verificación en 2 pasos → Contraseñas de aplicación.
+                    </p>
+                  )}
+                  {provider === 'brevo' && (
+                    <p className="text-xs text-green-800 bg-green-50 rounded-lg px-3 py-2">
+                      <strong>Correo remitente</strong> = tu email verificado en Brevo. <strong>Contraseña</strong> = API Key (<code>xkeysib-...</code>).
                     </p>
                   )}
                   {provider === 'resend' && (
