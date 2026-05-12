@@ -319,15 +319,6 @@ function VoucherModal({ employee, voucher, onClose, onSave }) {
     setSending(false)
   }
 
-  const ConceptRow = ({ c, idx }) => (
-    <div className="flex items-center gap-2">
-      <input type="text" value={c.description} onChange={e => setConcept(idx, 'description', e.target.value)}
-        placeholder="Concepto" className="flex-1 border rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-blue-400" />
-      <input type="number" step="0.01" min="0" value={c.amount} onChange={e => setConcept(idx, 'amount', e.target.value)}
-        className="w-28 border rounded-lg px-2 py-1.5 text-sm text-right focus:outline-none focus:ring-1 focus:ring-blue-400" />
-      <button onClick={() => removeConcept(idx)} className="text-gray-300 hover:text-red-500 font-bold text-lg leading-none">✕</button>
-    </div>
-  )
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 overflow-y-auto">
@@ -365,10 +356,15 @@ function VoucherModal({ employee, voucher, onClose, onSave }) {
                   className="text-xs font-bold px-2 py-0.5 rounded-lg bg-green-50 text-green-700 hover:bg-green-100">+ Agregar</button>
               </div>
               <div className="space-y-2">
-                {form.concepts.map((c, idx) => c.type === 'ingreso'
-                  ? <ConceptRow key={idx} c={c} idx={idx} />
-                  : null
-                )}
+                {form.concepts.map((c, idx) => c.type === 'ingreso' ? (
+                  <div key={idx} className="flex items-center gap-2">
+                    <input type="text" value={c.description} onChange={e => setConcept(idx, 'description', e.target.value)}
+                      placeholder="Concepto" className="flex-1 border rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-blue-400" />
+                    <input type="number" step="0.01" min="0" value={c.amount} onChange={e => setConcept(idx, 'amount', e.target.value)}
+                      className="w-28 border rounded-lg px-2 py-1.5 text-sm text-right focus:outline-none focus:ring-1 focus:ring-blue-400" />
+                    <button onClick={() => removeConcept(idx)} className="text-gray-300 hover:text-red-500 font-bold text-lg leading-none">✕</button>
+                  </div>
+                ) : null)}
               </div>
               <div className="mt-2 flex justify-between items-center px-1 border-t border-green-100 pt-2">
                 <span className="text-xs font-bold text-green-700 uppercase">Total Ingresos</span>
@@ -384,10 +380,15 @@ function VoucherModal({ employee, voucher, onClose, onSave }) {
                   className="text-xs font-bold px-2 py-0.5 rounded-lg bg-red-50 text-red-600 hover:bg-red-100">+ Agregar</button>
               </div>
               <div className="space-y-2">
-                {form.concepts.map((c, idx) => c.type === 'deduccion'
-                  ? <ConceptRow key={idx} c={c} idx={idx} />
-                  : null
-                )}
+                {form.concepts.map((c, idx) => c.type === 'deduccion' ? (
+                  <div key={idx} className="flex items-center gap-2">
+                    <input type="text" value={c.description} onChange={e => setConcept(idx, 'description', e.target.value)}
+                      placeholder="Concepto" className="flex-1 border rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-blue-400" />
+                    <input type="number" step="0.01" min="0" value={c.amount} onChange={e => setConcept(idx, 'amount', e.target.value)}
+                      className="w-28 border rounded-lg px-2 py-1.5 text-sm text-right focus:outline-none focus:ring-1 focus:ring-blue-400" />
+                    <button onClick={() => removeConcept(idx)} className="text-gray-300 hover:text-red-500 font-bold text-lg leading-none">✕</button>
+                  </div>
+                ) : null)}
               </div>
               <div className="mt-2 flex justify-between items-center px-1 border-t border-red-100 pt-2">
                 <span className="text-xs font-bold text-red-600 uppercase">Total Deducciones</span>
