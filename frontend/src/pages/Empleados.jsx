@@ -475,8 +475,13 @@ function VouchersPanel({ employee, onClose }) {
 
   const handleDelete = async (id) => {
     if (!confirm('¿Eliminar este comprobante?')) return
-    await api.deleteVoucher(id)
-    load()
+    try {
+      const res = await api.deleteVoucher(id)
+      if (res?.error) { alert('Error al eliminar: ' + res.error); return }
+      load()
+    } catch (e) {
+      alert('Error al eliminar: ' + e.message)
+    }
   }
 
   const handleResend = async (id) => {
