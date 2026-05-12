@@ -32,6 +32,23 @@ router.post('/vouchers/:id/send-email', async (req, res) => {
   }
 });
 
+// PUT /api/empleados/vouchers/:id
+router.put('/vouchers/:id', async (req, res) => {
+  try {
+    const { period_from, period_to, pay_date, concepts, total_ingresos, total_deducciones, neto } = req.body;
+    await vouchersDb.update({ _id: req.params.id }, { $set: { period_from, period_to, pay_date, concepts, total_ingresos, total_deducciones, neto } });
+    res.json(await vouchersDb.findOne({ _id: req.params.id }));
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// DELETE /api/empleados/vouchers/:id
+router.delete('/vouchers/:id', async (req, res) => {
+  try {
+    await vouchersDb.remove({ _id: req.params.id });
+    res.json({ success: true });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
 // POST /api/empleados/test-email  — literal route BEFORE /:id
 router.post('/test-email', async (req, res) => {
   try {

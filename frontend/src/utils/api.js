@@ -109,6 +109,8 @@ export const api = {
   deleteEmpleado:  (id)        => del(`${BASE}/empleados/${id}`),
   getVouchers:     (empId)     => get(`${BASE}/empleados/${empId}/vouchers`),
   createVoucher:   (empId, d)  => post(`${BASE}/empleados/${empId}/vouchers`, d),
+  updateVoucher:   (id, d)     => put(`${BASE}/empleados/vouchers/${id}`, d),
+  deleteVoucher:   (id)        => del(`${BASE}/empleados/vouchers/${id}`),
   sendVoucher:     (id)        => post(`${BASE}/empleados/vouchers/${id}/send-email`, {}),
   testEmail:       (to, emailConfig) => post(`${BASE}/empleados/test-email`, { to, emailConfig }),
 
