@@ -32,6 +32,29 @@ router.post('/vouchers/:id/send-email', async (req, res) => {
   }
 });
 
+// POST /api/empleados/test-email  — literal route BEFORE /:id
+router.post('/test-email', async (req, res) => {
+  try {
+    const { sendVoucherEmail } = require('../services/emailService');
+    const cfgName = await configDb.findOne({ key: 'company_name' });
+    const companyName = cfgName?.value || 'Prueba';
+    const toEmail = req.body.to;
+    if (!toEmail) return res.status(400).json({ error: 'Falta el campo "to"' });
+    await sendVoucherEmail({
+      voucher: {
+        number: 'TEST-000001', employee_name: 'Prueba de Correo', employee_cedula: '0000-0000-00000',
+        employee_code: 'TEST', employee_cargo: 'Sistema', period_from: '2026-05-01', period_to: '2026-05-31',
+        pay_date: '2026-05-31', concepts: [{ type: 'ingreso', description: 'Prueba', amount: 1 }],
+        total_ingresos: 1, total_deducciones: 0, neto: 1,
+      },
+      employeeEmail: toEmail, companyName,
+    });
+    res.json({ success: true, message: 'Correo de prueba enviado a ' + toEmail });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // GET /api/empleados
 router.get('/', async (req, res) => {
   try {

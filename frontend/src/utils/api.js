@@ -110,6 +110,7 @@ export const api = {
   getVouchers:     (empId)     => get(`${BASE}/empleados/${empId}/vouchers`),
   createVoucher:   (empId, d)  => post(`${BASE}/empleados/${empId}/vouchers`, d),
   sendVoucher:     (id)        => post(`${BASE}/empleados/vouchers/${id}/send-email`, {}),
+  testEmail:       (to)        => post(`${BASE}/empleados/test-email`, { to }),
 
   // Finanzas
   getResumenFinanciero: (params = {}) => get(`${BASE}/finanzas/resumen?${new URLSearchParams(params)}`),

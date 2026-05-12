@@ -1,6 +1,25 @@
 import { useState, useEffect } from 'react'
 import { api } from '../utils/api'
 
+function TestEmailButton({ smtpUser }) {
+  const [testing, setTesting] = useState(false)
+  const handleTest = async () => {
+    const to = smtpUser || window.prompt('Correo de destino para la prueba:')
+    if (!to) return
+    setTesting(true)
+    const result = await api.testEmail(to)
+    setTesting(false)
+    if (result?.error) alert('Error SMTP:\n\n' + result.error)
+    else alert('✅ Correo de prueba enviado a ' + to + '\nRevisa tu bandeja de entrada (y spam).')
+  }
+  return (
+    <button type="button" onClick={handleTest} disabled={testing}
+      className="mt-3 px-4 py-2 text-sm font-semibold rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-50">
+      {testing ? 'Enviando prueba…' : '✉️ Probar conexión SMTP'}
+    </button>
+  )
+}
+
 const COMPANY_FIELDS = [
   { key: 'company_name',    label: 'Nombre de la Empresa',   type: 'text'  },
   { key: 'company_address', label: 'Dirección',               type: 'text'  },
@@ -180,6 +199,9 @@ export default function Settings() {
               Para Gmail, usa una <strong>App Password</strong> (no tu contraseña normal). Habilítala en: Google Account → Seguridad → Verificación en 2 pasos → Contraseñas de aplicación.
             </div>
           )}
+          <div className="px-6 pb-5">
+            <TestEmailButton smtpUser={form.smtp_user} />
+          </div>
         </div>
 
         {/* Success / Error messages */}
