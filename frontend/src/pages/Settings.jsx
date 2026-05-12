@@ -207,8 +207,9 @@ export default function Settings() {
             </div>
           )}
           {form.smtp_provider === 'resend' && (
-            <div className="mx-6 mb-4 bg-purple-50 border border-purple-200 rounded-lg px-4 py-2 text-xs text-purple-700">
-              Para Resend: <strong>Usuario</strong> = tu email remitente verificado en resend.com. <strong>Contraseña</strong> = tu API Key (<code>re_...</code>). Asegúrate de verificar el dominio en resend.com/domains.
+            <div className="mx-6 mb-4 bg-purple-50 border border-purple-200 rounded-lg px-4 py-2 text-xs text-purple-700 space-y-1">
+              <p><strong>Contraseña</strong> = tu API Key de Resend (<code>re_...</code>). Obtén una en <strong>resend.com → API Keys</strong>.</p>
+              <p><strong>Usuario (remitente)</strong>: Para pruebas sin dominio propio usa <code>onboarding@resend.dev</code> — el correo llegará solo a tu email de cuenta Resend. Para clientes reales, verifica tu dominio en <strong>resend.com/domains</strong> y usa <code>tu@tudominio.com</code>.</p>
             </div>
           )}
           <div className="px-6 pb-5">

@@ -24,6 +24,9 @@ function getTransporter(emailConfig) {
     return nodemailer.createTransport({
       service: 'gmail',
       auth: { user, pass },
+      connectionTimeout: 15000,
+      greetingTimeout: 10000,
+      socketTimeout: 20000,
     });
   }
   if (provider === 'outlook' || provider === 'hotmail') {
@@ -33,29 +36,47 @@ function getTransporter(emailConfig) {
       secure: false,
       auth: { user, pass },
       tls: { ciphers: 'SSLv3' },
+      connectionTimeout: 15000,
+      greetingTimeout: 10000,
+      socketTimeout: 20000,
     });
   }
   if (provider === 'yahoo') {
     return nodemailer.createTransport({
       service: 'yahoo',
       auth: { user, pass },
+      connectionTimeout: 15000,
+      greetingTimeout: 10000,
+      socketTimeout: 20000,
     });
   }
   if (provider === 'resend') {
-    // pass = Resend API key (re_xxx...), user = verified sender email
-    return nodemailer.createTransport({
-      host: 'smtp.resend.com',
-      port: 465,
-      secure: true,
-      auth: { user: 'resend', pass },
-    });
+    // Use HTTP API — Render (and most cloud hosts) block outbound SMTP ports
+    return {
+      sendMail: async ({ from, to, subject, html }) => {
+        const response = await fetch('https://api.resend.com/emails', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${pass}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ from, to, subject, html }),
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.message || data.name || `Resend error ${response.status}`);
+        return data;
+      },
+    };
   }
-  // Custom SMTP
+  // Custom SMTP — add timeout to avoid hanging on blocked ports
   return nodemailer.createTransport({
     host: host || 'smtp.gmail.com',
     port: parseInt(port) || 587,
     secure: secure === true || secure === 'true',
     auth: { user, pass },
+    connectionTimeout: 15000,
+    greetingTimeout: 10000,
+    socketTimeout: 20000,
   });
 }
 
