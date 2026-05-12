@@ -1,15 +1,68 @@
 import { useState, useEffect, useCallback } from 'react'
 import { api } from '../utils/api'
+import * as XLSX from 'xlsx'
+
+async function exportEmpleadosXlsx(empleados) {
+  const fmtN = n => parseFloat(n || 0)
+  // Fetch all vouchers in parallel
+  const allVouchers = await Promise.all(
+    empleados.map(e => api.getVouchers(e._id).catch(() => []))
+  )
+
+  // Sheet 1: Summary per employee
+  const resumen = empleados.map((e, i) => {
+    const vs = allVouchers[i]
+    return {
+      'Código':            e.code || '',
+      'Nombre':            e.name || '',
+      'Cédula':            e.cedula || '',
+      'Cargo':             e.cargo || '',
+      'Departamento':      e.departamento || '',
+      'Correo':            e.email || '',
+      'Salario Base':      fmtN(e.salario_base),
+      '# Pagos':           vs.length,
+      'Total Ingresos':    fmtN(vs.reduce((s, v) => s + fmtN(v.total_ingresos), 0)),
+      'Total Deducciones': fmtN(vs.reduce((s, v) => s + fmtN(v.total_deducciones), 0)),
+      'Neto Acumulado':    fmtN(vs.reduce((s, v) => s + fmtN(v.neto), 0)),
+    }
+  })
+
+  // Sheet 2: Detail per voucher
+  const detalle = []
+  empleados.forEach((e, i) => {
+    allVouchers[i].forEach(v => {
+      detalle.push({
+        'No. Voucher':       v.number || '',
+        'Nombre':            e.name || '',
+        'Código':            e.code || '',
+        'Cargo':             e.cargo || '',
+        'Departamento':      e.departamento || '',
+        'Período Desde':     v.period_from || '',
+        'Período Hasta':     v.period_to || '',
+        'Fecha de Pago':     v.pay_date || '',
+        'Total Ingresos':    fmtN(v.total_ingresos),
+        'Total Deducciones': fmtN(v.total_deducciones),
+        'Neto':              fmtN(v.neto),
+        'Email Enviado':     v.email_sent ? 'Sí' : 'No',
+      })
+    })
+  })
+
+  const wb = XLSX.utils.book_new()
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(resumen),  'Resumen por Empleado')
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(detalle.length ? detalle : [{}]), 'Detalle de Pagos')
+  XLSX.writeFile(wb, `empleados_${new Date().toISOString().slice(0,10)}.xlsx`)
+}
 
 const ACCENT = '#2563EB'
 const fmt = n => 'L. ' + parseFloat(n || 0).toLocaleString('es-HN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 const today = () => new Date().toISOString().slice(0, 10)
 
 function openPrint(html) {
-  const w = window.open('', '_blank', 'width=860,height=700')
+  const w = window.open('', '_blank')
+  if (!w) { alert('Permite ventanas emergentes para poder imprimir.'); return }
   w.document.write(html)
   w.document.close()
-  w.focus()
   setTimeout(() => w.print(), 400)
 }
 
@@ -529,12 +582,13 @@ function VouchersPanel({ employee, onClose }) {
 
 // ── Main Page ─────────────────────────────────────────────────────────────────
 export default function Empleados() {
-  const [empleados, setEmpleados] = useState([])
-  const [loading, setLoading]     = useState(true)
-  const [search, setSearch]       = useState('')
-  const [modal, setModal]         = useState(null)  // 'new' | 'edit'
-  const [selected, setSelected]   = useState(null)
-  const [vPanel, setVPanel]       = useState(null)  // employee to show vouchers
+  const [empleados, setEmpleados]     = useState([])
+  const [loading, setLoading]         = useState(true)
+  const [search, setSearch]           = useState('')
+  const [modal, setModal]             = useState(null)  // 'new' | 'edit'
+  const [selected, setSelected]       = useState(null)
+  const [vPanel, setVPanel]           = useState(null)  // employee to show vouchers
+  const [xlsxLoading, setXlsxLoading] = useState(false)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -571,9 +625,17 @@ export default function Empleados() {
           <h1 className="text-xl font-bold text-white">Empleados</h1>
           <p className="text-blue-100 text-sm">Gestión de empleados y comprobantes de pago</p>
         </div>
-        <button onClick={() => setModal('new')} className="px-4 py-2 rounded-lg font-bold text-sm bg-white" style={{ color: ACCENT }}>
-          + Nuevo Empleado
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={async () => { setXlsxLoading(true); try { await exportEmpleadosXlsx(empleados) } catch(e) { alert('Error al generar reporte: ' + e.message) } finally { setXlsxLoading(false) } }}
+            disabled={xlsxLoading || empleados.length === 0}
+            className="px-4 py-2 rounded-lg font-bold text-sm bg-white/20 text-white hover:bg-white/30 disabled:opacity-50">
+            {xlsxLoading ? 'Generando...' : '📥 Reporte XLSX'}
+          </button>
+          <button onClick={() => setModal('new')} className="px-4 py-2 rounded-lg font-bold text-sm bg-white" style={{ color: ACCENT }}>
+            + Nuevo Empleado
+          </button>
+        </div>
       </div>
 
       <div className="p-6 max-w-5xl mx-auto space-y-5">
