@@ -43,10 +43,12 @@ export default function InvoiceTemplate({ invoice, config }) {
     displayRows.push({ qty: '', description: '', unitPrice: '' })
   }
 
-  const invoiceNumber = invoice.invoice_number || invoice.invoiceNumber || ''
-  const clientName    = invoice.client_name    || invoice.clientName    || ''
-  const clientAddress = invoice.client_address || invoice.clientAddress || ''
-  const clientRtn     = invoice.client_rtn     || invoice.clientRtn     || ''
+  const invoiceNumber = invoice.invoice_number   || invoice.invoiceNumber  || ''
+  const clientName    = invoice.client_name      || invoice.clientName    || ''
+  const clientCompany = invoice.client_company   || invoice.clientCompany || ''
+  const clientEmail   = invoice.client_email     || invoice.clientEmail   || ''
+  const clientAddress = invoice.client_address   || invoice.clientAddress || ''
+  const clientRtn     = invoice.client_rtn       || invoice.clientRtn     || ''
 
   const ventaExonerada  = parseFloat(invoice.venta_exonerada  || invoice.ventaExonerada  || 0)
   const subtotalExento  = parseFloat(invoice.subtotal_exento  || invoice.subtotalExento  || 0)
@@ -115,7 +117,11 @@ export default function InvoiceTemplate({ invoice, config }) {
               <div style={{ color: isCotizacion ? '#d97706' : '#dc2626', fontWeight: 'bold', fontSize: '13px', marginBottom: '2px' }}>
                 No. {invoiceNumber}
               </div>
-              {!isCotizacion && (
+              {isCotizacion ? (
+                <div style={{ fontSize: '10px', color: '#374151', lineHeight: '1.6' }}>
+                  <div><strong>RTN.</strong> {companyRtn}</div>
+                </div>
+              ) : (
                 <div style={{ fontSize: '10px', color: '#374151', lineHeight: '1.6' }}>
                   <div><strong>CAI.</strong> {cai || '—'}</div>
                   <div><strong>RTN.</strong> {companyRtn}</div>
@@ -154,11 +160,11 @@ export default function InvoiceTemplate({ invoice, config }) {
         <tbody>
           <tr>
             <td style={{ padding: '3px 6px', borderBottom: '1px solid #d1d5db' }}>
-              <strong>Señor(es):</strong> {clientName}
+              <strong>Señor(es):</strong> {clientCompany || clientName}
             </td>
           </tr>
           <tr>
-            <td style={{ padding: '3px 6px' }}>
+            <td style={{ padding: '3px 6px', borderBottom: clientEmail ? '1px solid #d1d5db' : undefined }}>
               <table style={{ width: '100%' }}>
                 <tbody>
                   <tr>
@@ -171,6 +177,13 @@ export default function InvoiceTemplate({ invoice, config }) {
               </table>
             </td>
           </tr>
+          {clientEmail && (
+            <tr>
+              <td style={{ padding: '3px 6px' }}>
+                <strong>Correo:</strong> {clientEmail}
+              </td>
+            </tr>
+          )}
         </tbody>
       </table>
 

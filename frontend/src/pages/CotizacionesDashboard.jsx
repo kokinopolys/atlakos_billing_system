@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { api } from '../utils/api'
+import { SortTh, sortRows } from '../components/SortTh'
 
 const fmt = (n) =>
   parseFloat(n || 0).toLocaleString('en-US', {
@@ -32,6 +33,13 @@ export default function CotizacionesDashboard() {
   const [from, setFrom]                 = useState('')
   const [to, setTo]                     = useState('')
   const [statusFilter, setStatusFilter] = useState('')
+  const [sortKey, setSortKey]           = useState('date')
+  const [sortDir, setSortDir]           = useState('desc')
+
+  const handleSort = (col) => {
+    if (sortKey === col) setSortDir(d => d === 'asc' ? 'desc' : 'asc')
+    else { setSortKey(col); setSortDir('asc') }
+  }
 
   const loadCotizaciones = (params = {}) => {
     setLoading(true)
@@ -71,10 +79,11 @@ export default function CotizacionesDashboard() {
     }
   }
 
-  // Apply status filter client-side
-  const displayed = statusFilter
+  // Apply status filter then sort
+  const filtered = statusFilter
     ? cotizaciones.filter(c => c.status === statusFilter)
     : cotizaciones
+  const displayed = sortRows(filtered, sortKey, sortDir)
 
   // Stats
   const total      = cotizaciones.length
@@ -199,14 +208,15 @@ export default function CotizacionesDashboard() {
         )}
 
         {!loading && !error && displayed.length > 0 && (
+          <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="bg-gray-50 text-left">
-                <th className="px-4 py-3 font-semibold text-gray-600 border-b border-gray-200">No. Cotización</th>
-                <th className="px-4 py-3 font-semibold text-gray-600 border-b border-gray-200">Fecha</th>
-                <th className="px-4 py-3 font-semibold text-gray-600 border-b border-gray-200">Cliente</th>
-                <th className="px-4 py-3 font-semibold text-gray-600 border-b border-gray-200 text-right">Total</th>
-                <th className="px-4 py-3 font-semibold text-gray-600 border-b border-gray-200 text-center">Estado</th>
+                <SortTh label="No. Cotización" col="invoice_number" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} />
+                <SortTh label="Fecha"          col="date"           sortKey={sortKey} sortDir={sortDir} onSort={handleSort} />
+                <SortTh label="Cliente"        col="client_name"    sortKey={sortKey} sortDir={sortDir} onSort={handleSort} />
+                <SortTh label="Total"          col="total"          sortKey={sortKey} sortDir={sortDir} onSort={handleSort} align="right" />
+                <SortTh label="Estado"         col="status"         sortKey={sortKey} sortDir={sortDir} onSort={handleSort} align="center" />
                 <th className="px-4 py-3 font-semibold text-gray-600 border-b border-gray-200 text-center">Acciones</th>
               </tr>
             </thead>
@@ -253,6 +263,7 @@ export default function CotizacionesDashboard() {
               ))}
             </tbody>
           </table>
+          </div>
         )}
       </div>
     </div>

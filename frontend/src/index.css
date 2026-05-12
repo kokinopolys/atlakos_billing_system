@@ -30,3 +30,9 @@
   font-family: Arial, sans-serif;
   font-size: 11px;
 }
+
+/* Mobile: prevent table headers from wrapping so columns keep their natural width
+   and trigger horizontal scroll in overflow-x-auto containers */
+.overflow-x-auto thead {
+  white-space: nowrap;
+}

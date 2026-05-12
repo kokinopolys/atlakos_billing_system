@@ -3,6 +3,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { usersDb } = require('../db/database');
 const { requireAuth, JWT_SECRET } = require('../middleware/auth');
+const { nowHN } = require('../utils/time');
 
 const router = express.Router();
 
@@ -64,7 +65,7 @@ router.post('/users', requireAuth, async (req, res) => {
       username: username.trim(),
       password: hash,
       name: name || username.trim(),
-      createdAt: new Date().toISOString(),
+      createdAt: nowHN(),
     });
 
     res.status(201).json({ id: user._id, username: user.username, name: user.name });

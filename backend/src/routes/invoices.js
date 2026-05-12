@@ -2,6 +2,8 @@ const express = require('express');
 const router = express.Router();
 const { invoicesDb, configDb } = require('../db/database');
 const { numberToWords } = require('../services/numberToWords');
+const { generateApprovalToken, sendCotizacionEmail } = require('../services/emailService');
+const { nowHN } = require('../utils/time');
 
 async function getConfig(key) {
   const row = await configDb.findOne({ key });
@@ -70,7 +72,7 @@ router.get('/', async (req, res) => {
 router.post('/', async (req, res) => {
   try {
     const {
-      date, clientName, clientAddress = '', clientRtn = '',
+      date, clientName, clientCompany = '', clientAddress = '', clientRtn = '',
       items = [], taxIncluded,
       ventaExonerada = 0, subtotalExento = 0, descuentos = 0,
       noOcExenta = '', noRegistroExonerado = '', noRegistroSag = '',
@@ -100,13 +102,21 @@ router.post('/', async (req, res) => {
       ? `${prefix}-${String(seq).padStart(6, '0')}`
       : `${prefix}-${String(seq).padStart(8, '0')}`;
 
+    const {
+      clientId, clientEmail,
+      eventName, eventDate, eventGuests, eventLocation, eventNotes,
+    } = req.body;
+
     const doc = {
       invoice_number:        invoiceNumber,
       doc_type:              docType,
       date,
+      client_id:             clientId || null,
       client_name:           clientName,
+      client_company:        clientCompany,
       client_address:        clientAddress,
       client_rtn:            clientRtn,
+      client_email:          clientEmail || '',
       items:                 JSON.stringify(items),
       tax_included:          taxIncluded ? 1 : 0,
       venta_exonerada:       ve,
@@ -119,8 +129,13 @@ router.post('/', async (req, res) => {
       no_oc_exenta:          noOcExenta,
       no_registro_exonerado: noRegistroExonerado,
       no_registro_sag:       noRegistroSag,
+      event_name:            eventName || '',
+      event_date:            eventDate || '',
+      event_guests:          eventGuests || '',
+      event_location:        eventLocation || '',
+      event_notes:           eventNotes || '',
       status:                isCotizacion ? 'pendiente' : 'emitida',
-      created_at:            new Date().toISOString(),
+      created_at:            nowHN(),
     };
 
     const inserted = await invoicesDb.insert(doc);
@@ -154,7 +169,8 @@ router.put('/:id', async (req, res) => {
     if (row.status === 'facturada') return res.status(400).json({ error: 'No se puede editar una cotización ya facturada' });
 
     const {
-      date, clientName, clientAddress = '', clientRtn = '',
+      date, clientName, clientCompany = '', clientAddress = '', clientRtn = '',
+      clientId, clientEmail,
       items = [], taxIncluded,
       ventaExonerada = 0, subtotalExento = 0, descuentos = 0,
       noOcExenta = '', noRegistroExonerado = '', noRegistroSag = '',
@@ -176,9 +192,12 @@ router.put('/:id', async (req, res) => {
 
     const updates = {
       date,
+      client_id:             clientId || null,
       client_name:           clientName,
+      client_company:        clientCompany,
       client_address:        clientAddress,
       client_rtn:            clientRtn,
+      client_email:          clientEmail || '',
       items:                 JSON.stringify(items),
       tax_included:          taxIncluded ? 1 : 0,
       venta_exonerada:       ve,
@@ -249,7 +268,7 @@ router.post('/:id/convert', async (req, res) => {
       from_cotizacion_id: cot._id,
       from_cotizacion_number: cot.invoice_number,
       status: 'emitida',
-      created_at: new Date().toISOString(),
+      created_at: nowHN(),
     };
 
     const inserted = await invoicesDb.insert(facturaDoc);
@@ -279,6 +298,50 @@ router.delete('/:id', async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Error al anular documento' });
+  }
+});
+
+// POST /api/invoices/:id/enviar-cotizacion — send cotizacion by email
+router.post('/:id/enviar-cotizacion', async (req, res) => {
+  try {
+    const cot = await invoicesDb.findOne({ _id: req.params.id });
+    if (!cot) return res.status(404).json({ error: 'Cotización no encontrada' });
+    if (cot.doc_type !== 'cotizacion') return res.status(400).json({ error: 'Solo se pueden enviar cotizaciones' });
+    if (cot.status === 'facturada' || cot.status === 'anulada') {
+      return res.status(400).json({ error: 'No se puede enviar esta cotización' });
+    }
+
+    const { clientEmail, emailConfig, baseUrl } = req.body;
+    const toEmail = clientEmail || cot.client_email;
+    if (!toEmail) return res.status(400).json({ error: 'Se requiere un correo del cliente' });
+    if (!emailConfig?.user || !emailConfig?.pass) {
+      return res.status(400).json({ error: 'Configure el correo saliente en Configuración antes de enviar' });
+    }
+
+    const token = generateApprovalToken();
+    const expiresAt = nowHN(7 * 24 * 60 * 60 * 1000);
+
+    await invoicesDb.update(
+      { _id: req.params.id },
+      { $set: { approval_token: token, approval_token_expires: expiresAt, email_sent_to: toEmail, email_sent_at: nowHN() } }
+    );
+
+    const companyName = (await getConfig('company_name')) || 'MRS DEVS';
+    const frontendUrl = baseUrl || 'http://localhost:5173';
+
+    await sendCotizacionEmail({
+      emailConfig,
+      cotizacion: cot,
+      companyName,
+      clientEmail: toEmail,
+      approvalToken: token,
+      baseUrl: frontendUrl,
+    });
+
+    res.json({ success: true, email_sent_to: toEmail });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: `Error al enviar correo: ${err.message}` });
   }
 });
 

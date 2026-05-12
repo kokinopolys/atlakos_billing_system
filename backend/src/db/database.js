@@ -2,6 +2,7 @@ const Datastore = require('nedb-promises');
 const path = require('path');
 const fs = require('fs');
 const bcrypt = require('bcryptjs');
+const { nowHN } = require('../utils/time');
 
 const dataDir = path.join(__dirname, '..', '..', 'data');
 if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
@@ -18,6 +19,41 @@ const configDb = Datastore.create({
 
 const usersDb = Datastore.create({
   filename: path.join(dataDir, 'users.db'),
+  autoload: true,
+});
+
+const clientesDb = Datastore.create({
+  filename: path.join(dataDir, 'clientes.db'),
+  autoload: true,
+});
+
+const serviciosDb = Datastore.create({
+  filename: path.join(dataDir, 'servicios.db'),
+  autoload: true,
+});
+
+const gastosDb = Datastore.create({
+  filename: path.join(dataDir, 'gastos.db'),
+  autoload: true,
+});
+
+const cxcDb = Datastore.create({
+  filename: path.join(dataDir, 'cxc.db'),
+  autoload: true,
+});
+
+const cxpDb = Datastore.create({
+  filename: path.join(dataDir, 'cxp.db'),
+  autoload: true,
+});
+
+const empleadosDb = Datastore.create({
+  filename: path.join(dataDir, 'empleados.db'),
+  autoload: true,
+});
+
+const vouchersDb = Datastore.create({
+  filename: path.join(dataDir, 'vouchers.db'),
   autoload: true,
 });
 
@@ -52,7 +88,7 @@ async function seedUsers() {
       username: 'devs.mrs',
       password: hash,
       name: 'Administrador',
-      createdAt: new Date().toISOString(),
+      createdAt: nowHN(),
     });
   }
 }
@@ -60,4 +96,4 @@ async function seedUsers() {
 seedConfig().catch(console.error);
 seedUsers().catch(console.error);
 
-module.exports = { invoicesDb, configDb, usersDb };
+module.exports = { invoicesDb, configDb, usersDb, clientesDb, serviciosDb, gastosDb, cxcDb, cxpDb, empleadosDb, vouchersDb };

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { api } from '../utils/api'
+import { SortTh, sortRows } from '../components/SortTh'
 
 const fmt = (n) =>
   parseFloat(n || 0).toLocaleString('en-US', {
@@ -39,6 +40,13 @@ export default function Dashboard() {
   const [error, setError]       = useState(null)
   const [from, setFrom]         = useState('')
   const [to, setTo]             = useState('')
+  const [sortKey, setSortKey]   = useState('date')
+  const [sortDir, setSortDir]   = useState('desc')
+
+  const handleSort = (col) => {
+    if (sortKey === col) setSortDir(d => d === 'asc' ? 'desc' : 'asc')
+    else { setSortKey(col); setSortDir('asc') }
+  }
 
   const loadInvoices = (params = {}) => {
     setLoading(true)
@@ -76,6 +84,8 @@ export default function Dashboard() {
       alert('Error al anular la factura')
     }
   }
+
+  const sorted = sortRows(invoices, sortKey, sortDir)
 
   // Stats (based on currently loaded invoices)
   const emitidas = invoices.filter(i => i.status === 'emitida')
@@ -190,20 +200,21 @@ export default function Dashboard() {
         )}
 
         {!loading && !error && invoices.length > 0 && (
+          <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="bg-gray-50 text-left">
                 <th className="px-4 py-3 font-semibold text-gray-600 border-b border-gray-200">Tipo</th>
-                <th className="px-4 py-3 font-semibold text-gray-600 border-b border-gray-200">No. Factura</th>
-                <th className="px-4 py-3 font-semibold text-gray-600 border-b border-gray-200">Fecha</th>
-                <th className="px-4 py-3 font-semibold text-gray-600 border-b border-gray-200">Cliente</th>
-                <th className="px-4 py-3 font-semibold text-gray-600 border-b border-gray-200 text-right">Total</th>
-                <th className="px-4 py-3 font-semibold text-gray-600 border-b border-gray-200 text-center">Estado</th>
+                <SortTh label="No. Factura"  col="invoice_number" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} />
+                <SortTh label="Fecha"        col="date"           sortKey={sortKey} sortDir={sortDir} onSort={handleSort} />
+                <SortTh label="Cliente"      col="client_name"    sortKey={sortKey} sortDir={sortDir} onSort={handleSort} />
+                <SortTh label="Total"        col="total"          sortKey={sortKey} sortDir={sortDir} onSort={handleSort} align="right" />
+                <SortTh label="Estado"       col="status"         sortKey={sortKey} sortDir={sortDir} onSort={handleSort} align="center" />
                 <th className="px-4 py-3 font-semibold text-gray-600 border-b border-gray-200 text-center">Acciones</th>
               </tr>
             </thead>
             <tbody>
-              {invoices.map((inv, idx) => (
+              {sorted.map((inv, idx) => (
                 <tr
                   key={inv.id}
                   className={`${idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'} hover:bg-blue-50 transition-colors`}
@@ -248,6 +259,7 @@ export default function Dashboard() {
               ))}
             </tbody>
           </table>
+          </div>
         )}
       </div>
     </div>

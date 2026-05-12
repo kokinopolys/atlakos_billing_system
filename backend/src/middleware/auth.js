@@ -1,6 +1,6 @@
 const jwt = require('jsonwebtoken');
 
-const JWT_SECRET = 'devsmrs_facturacion_secret_2026';
+const JWT_SECRET = process.env.JWT_SECRET || 'devsmrs_facturacion_secret_2026';
 
 function requireAuth(req, res, next) {
   const header = req.headers.authorization;

@@ -134,6 +134,54 @@ export default function Settings() {
           Cambiarlo manualmente puede causar duplicados. Modifícalo solo si es necesario.
         </div>
 
+        {/* Email / SMTP config */}
+        <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden mb-6">
+          <div className="px-6 py-4 border-b border-gray-100 bg-gray-50">
+            <div className="flex items-center gap-2">
+              <span className="text-xl">✉️</span>
+              <div>
+                <h2 className="font-bold text-gray-800">Correo Saliente (SMTP)</h2>
+                <p className="text-xs text-gray-500 mt-0.5">Usado para enviar cotizaciones a clientes. Se puede configurar por cotización también.</p>
+              </div>
+            </div>
+          </div>
+          <div className="p-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Proveedor</label>
+              <select value={form.smtp_provider || 'gmail'} onChange={e => handleChange('smtp_provider', e.target.value)} className={inputCls}>
+                <option value="gmail">Gmail (App Password)</option>
+                <option value="yahoo">Yahoo</option>
+                <option value="custom">SMTP Personalizado</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Usuario (correo remitente)</label>
+              <input type="email" value={form.smtp_user || ''} onChange={e => handleChange('smtp_user', e.target.value)} className={inputCls} placeholder="tu@correo.com" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Contraseña / App Password</label>
+              <input type="password" value={form.smtp_pass || ''} onChange={e => handleChange('smtp_pass', e.target.value)} className={inputCls} placeholder="••••••••" />
+            </div>
+            {(form.smtp_provider === 'custom') && (
+              <>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Host SMTP</label>
+                  <input value={form.smtp_host || ''} onChange={e => handleChange('smtp_host', e.target.value)} className={inputCls} placeholder="smtp.ejemplo.com" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Puerto</label>
+                  <input value={form.smtp_port || '587'} onChange={e => handleChange('smtp_port', e.target.value)} className={inputCls} placeholder="587" />
+                </div>
+              </>
+            )}
+          </div>
+          {form.smtp_provider === 'gmail' && (
+            <div className="mx-6 mb-4 bg-blue-50 border border-blue-200 rounded-lg px-4 py-2 text-xs text-blue-700">
+              Para Gmail, usa una <strong>App Password</strong> (no tu contraseña normal). Habilítala en: Google Account → Seguridad → Verificación en 2 pasos → Contraseñas de aplicación.
+            </div>
+          )}
+        </div>
+
         {/* Success / Error messages */}
         {success && (
           <div className="mb-4 flex items-center gap-2 bg-green-50 border border-green-200 text-green-800 rounded-xl px-4 py-3 text-sm">

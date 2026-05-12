@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { api } from '../utils/api'
 import InvoiceTemplate from '../components/InvoiceTemplate'
+import ClienteSelector from '../components/ClienteSelector'
 
 const fmt = (n) =>
   parseFloat(n || 0).toLocaleString('en-US', {
@@ -90,9 +91,12 @@ export default function NewCotizacion() {
 
   const [config, setConfig]                 = useState(null)
   const [date, setDate]                     = useState(today())
+  const [clientId, setClientId]             = useState(null)
   const [clientName, setClientName]         = useState('')
+  const [clientCompany, setClientCompany]   = useState('')
   const [clientAddress, setClientAddress]   = useState('')
   const [clientRtn, setClientRtn]           = useState('')
+  const [clientEmail, setClientEmail]       = useState('')
   const [taxIncluded, setTaxIncluded]       = useState(null)
   const [items, setItems]                   = useState([emptyItem()])
   const [ventaExonerada, setVentaExonerada] = useState('')
@@ -131,6 +135,7 @@ export default function NewCotizacion() {
     doc_type: 'cotizacion',
     date,
     client_name: clientName || 'Cliente',
+    client_company: clientCompany,
     client_address: clientAddress,
     client_rtn: clientRtn,
     items,
@@ -169,9 +174,12 @@ export default function NewCotizacion() {
     try {
       const result = await api.createCotizacion({
         date,
+        clientId,
         clientName,
+        clientCompany,
         clientAddress,
         clientRtn,
+        clientEmail,
         items: validItems.map(it => ({
           qty: parseFloat(it.qty),
           description: it.description,
@@ -223,15 +231,44 @@ export default function NewCotizacion() {
           <div className="bg-gray-50 rounded-xl p-4 space-y-3">
             <h2 className="font-semibold text-gray-700 text-sm">Datos del Cliente</h2>
             <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">Buscar en catálogo de clientes</label>
+              <ClienteSelector
+                selectedId={clientId}
+                selectedName={clientName}
+                onSelect={c => { setClientId(c.id); setClientName(c.name); setClientCompany(c.company); setClientAddress(c.address); setClientRtn(c.rtn); setClientEmail(c.email) }}
+                onClear={() => { setClientId(null); setClientName(''); setClientCompany(''); setClientAddress(''); setClientRtn(''); setClientEmail('') }}
+              />
+            </div>
+            <div>
               <label className="block text-xs font-medium text-gray-600 mb-1">Señor(es) / Nombre *</label>
               <input
                 type="text"
                 placeholder="Nombre completo o razón social"
                 value={clientName}
-                onChange={e => setClientName(e.target.value)}
+                onChange={e => { setClientName(e.target.value); setClientId(null) }}
                 className={inputCls(errors.clientName)}
               />
               {errors.clientName && <p className="text-red-500 text-xs mt-1">{errors.clientName}</p>}
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">Razón Social / Empresa</label>
+              <input
+                type="text"
+                placeholder="Nombre de la empresa u organización"
+                value={clientCompany}
+                onChange={e => setClientCompany(e.target.value)}
+                className={inputCls(false)}
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">Correo del Cliente</label>
+              <input
+                type="email"
+                placeholder="correo@cliente.com (para envío de cotización)"
+                value={clientEmail}
+                onChange={e => setClientEmail(e.target.value)}
+                className={inputCls(false)}
+              />
             </div>
             <div>
               <label className="block text-xs font-medium text-gray-600 mb-1">Dirección</label>
