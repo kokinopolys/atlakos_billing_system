@@ -23,7 +23,7 @@ router.post('/vouchers/:id/send-email', async (req, res) => {
     const cfgName = await configDb.findOne({ key: 'company_name' });
     const companyName = cfgName?.value || 'Empresa';
 
-    await sendVoucherEmail({ voucher, employeeEmail: email, companyName });
+    await sendVoucherEmail({ voucher, employeeEmail: email, companyName, emailConfig: req.body.emailConfig });
     await vouchersDb.update({ _id: req.params.id }, { $set: { email_sent: true, email_sent_at: new Date().toISOString() } });
     res.json(await vouchersDb.findOne({ _id: req.params.id }));
   } catch (err) {
@@ -48,6 +48,7 @@ router.post('/test-email', async (req, res) => {
         total_ingresos: 1, total_deducciones: 0, neto: 1,
       },
       employeeEmail: toEmail, companyName,
+      emailConfig: req.body.emailConfig,
     });
     res.json({ success: true, message: 'Correo de prueba enviado a ' + toEmail });
   } catch (err) {

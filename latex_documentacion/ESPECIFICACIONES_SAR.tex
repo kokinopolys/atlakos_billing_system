@@ -23,10 +23,11 @@
 
 % ── Márgenes ──────────────────────────────────────────────────────────────────
 \geometry{
-  top    = 2.5cm,
-  bottom = 2.5cm,
-  left   = 3cm,
-  right  = 2.5cm
+  top        = 2.5cm,
+  bottom     = 2.5cm,
+  left       = 3cm,
+  right      = 2.5cm,
+  headheight = 14pt
 }
 
 % ── Colores ───────────────────────────────────────────────────────────────────
@@ -87,8 +88,8 @@
   \vfill
 
   \begin{tabular}{ll}
-    \textbf{Versión:}       & 1.0                    \\[4pt]
-    \textbf{Fecha:}         & Abril 2026             \\[4pt]
+    \textbf{Versión:}       & 2.0                    \\[4pt]
+    \textbf{Fecha:}         & Mayo 2026              \\[4pt]
     \textbf{Clasificación:} & Uso Interno / Registro \\
   \end{tabular}
 \end{titlepage}
@@ -116,19 +117,36 @@
 % ─────────────────────────────────────────────────────────────────────────────
 \section{Descripción del Sistema}
 
-El sistema es una aplicación web de gestión de facturación desarrollada
-internamente por DEVS MRS S.\ de R.\ L., diseñada para cumplir con los
-requerimientos del formato de factura autorizado por el SAR de Honduras.
+El sistema es una aplicación web integral de gestión comercial y facturación
+desarrollada internamente por DEVS MRS S.\ de R.\ L., diseñada para cumplir
+con los requerimientos del formato de factura autorizado por el SAR de Honduras.
 Permite la emisión de \textbf{Facturas Fiscales} y \textbf{Cotizaciones},
-con flujo de conversión entre ambos tipos de documento.
+con flujo completo de gestión de clientes, servicios, gastos y reportería
+financiera.
 
-\subsection{Tipos de Documento Soportados}
+\subsection{Módulos del Sistema}
 
 \begin{enumerate}[label=\textbf{\arabic*.}]
-  \item \textbf{Factura} --- Documento fiscal con número correlativo único,
-        CAI, RTN, rango autorizado y fecha límite de emisión.
-  \item \textbf{Cotización} --- Documento pre-venta no fiscal; puede ser
-        aceptada, rechazada o convertida en Factura.
+  \item \textbf{Facturación} --- Emisión de facturas fiscales con número
+        correlativo, CAI, RTN, rangos autorizados e ISV desglosado.
+  \item \textbf{Cotizaciones} --- Documento pre-venta con flujo de aprobación
+        por correo electrónico; puede convertirse automáticamente en Factura
+        al ser aprobada por el cliente.
+  \item \textbf{Catálogo de Clientes} --- Registro centralizado de clientes
+        con nombre, razón social, RTN, dirección, correo y teléfono.
+        Vinculado al ecosistema de cotizaciones y facturas.
+  \item \textbf{Catálogo de Servicios} --- Inventario de servicios tecnológicos
+        ofrecidos, organizados por categorías, con precios y descripciones.
+  \item \textbf{Gastos} --- Registro de gastos operativos categorizados para
+        control financiero interno.
+  \item \textbf{Reportería} --- Informes de ventas por fecha, cliente y
+        servicio; resumen financiero del período.
+  \item \textbf{Finanzas} --- Resumen financiero consolidado (ingresos,
+        gastos, utilidad bruta).
+  \item \textbf{Configuración} --- Parámetros de empresa, datos fiscales
+        (CAI, rangos, RTN) y configuración de correo saliente (SMTP).
+  \item \textbf{Gestión de Usuarios} --- Control de acceso con múltiples
+        usuarios y autenticación JWT.
 \end{enumerate}
 
 % ─────────────────────────────────────────────────────────────────────────────
@@ -145,6 +163,9 @@ con flujo de conversión entre ambos tipos de documento.
   Framework API     & Express.js              & v4 (API REST HTTP)           \\
   Base de Datos     & NeDB (nedb-promises)    & Base de datos NoSQL embebida,
                                                archivos \texttt{.db} en disco \\
+  Autenticación     & JSON Web Tokens (JWT)   & Tokens firmados para sesión  \\
+  Email             & Nodemailer              & SMTP multi-proveedor         \\
+  Email OAuth2      & Microsoft Graph API     & Outlook personal vía OAuth2  \\
   Frontend          & React                   & v18                          \\
   Bundler           & Vite                    & v5                           \\
   Estilos           & Tailwind CSS            & v3                           \\
@@ -158,11 +179,15 @@ con flujo de conversión entre ambos tipos de documento.
 \begin{itemize}
   \item \textbf{Tipo:} Aplicación web cliente-servidor (SPA + REST API).
   \item \textbf{Comunicación:} HTTP/1.1, JSON en todos los endpoints.
+  \item \textbf{Autenticación:} JWT Bearer Token en cabecera \texttt{Authorization}.
   \item \textbf{Puerto API:} 3001 (configurable mediante variable de entorno).
   \item \textbf{Puerto Frontend:} 5173 en desarrollo; se puede servir de
         forma estática en producción.
   \item \textbf{Despliegue:} Servidor local o nube privada; no requiere
         base de datos externa.
+  \item \textbf{Rutas públicas:} El endpoint de respuesta a cotizaciones
+        (\texttt{/api/cotizacion-respuesta/:token}) no requiere autenticación,
+        permitiendo al cliente aprobar o rechazar desde el correo recibido.
 \end{itemize}
 
 % ─────────────────────────────────────────────────────────────────────────────
@@ -178,19 +203,26 @@ embebida que almacena los datos en archivos de texto plano en disco
 
 \begin{tabularx}{\linewidth}{>{\bfseries}l X}
   \toprule
-  Colección              & Descripción                                    \\
+  Colección              & Descripción                                        \\
   \midrule
-  \texttt{invoices.db}   & Almacena facturas y cotizaciones               \\
-  \texttt{config.db}     & Almacena la configuración de la empresa
-                           (CAI, RTN, rangos autorizados, etc.)           \\
+  \texttt{invoices.db}   & Facturas y cotizaciones con todos sus campos       \\
+  \texttt{clientes.db}   & Catálogo de clientes (nombre, empresa, RTN, etc.)  \\
+  \texttt{servicios.db}  & Catálogo de servicios tecnológicos ofrecidos       \\
+  \texttt{gastos.db}     & Registro de gastos operativos                      \\
+  \texttt{users.db}      & Usuarios del sistema con contraseñas cifradas      \\
+  \texttt{config.db}     & Configuración de empresa (CAI, RTN, SMTP, etc.)    \\
   \bottomrule
 \end{tabularx}
 
 \subsection{Ruta de Almacenamiento}
 
 \begin{verbatim}
-backend/src/db/invoices.db
-backend/src/db/config.db
+backend/data/invoices.db
+backend/data/clientes.db
+backend/data/servicios.db
+backend/data/gastos.db
+backend/data/users.db
+backend/data/config.db
 \end{verbatim}
 
 % ─────────────────────────────────────────────────────────────────────────────
@@ -218,14 +250,14 @@ El número de factura sigue el formato oficial establecido por el SAR:
 \subsection{Cotización}
 
 \begin{center}
-  \Large\texttt{COT-XXXXXXXX}
+  \Large\texttt{COT-XXXXXX}
 \end{center}
 
 Las cotizaciones usan el prefijo \texttt{COT-} seguido de un número
-correlativo independiente del correlativo de facturas.
+correlativo de 6 dígitos, independiente del correlativo de facturas.
 
 % ─────────────────────────────────────────────────────────────────────────────
-\section{Campos del Documento de Factura}
+\section{Campos del Documento de Factura / Cotización}
 
 \subsection{Datos del Emisor (Empresa)}
 
@@ -239,7 +271,7 @@ correlativo independiente del correlativo de facturas.
   Correo Electrónico        & Email de contacto                        \\
   RTN                       & Registro Tributario Nacional de la empresa\\
   CAI                       & Código de Autorización de Impresión
-                              (emitido por el SAR)                      \\
+                              (emitido por el SAR) --- solo en facturas  \\
   Rango Autorizado (Desde)  & Primer número de factura autorizado      \\
   Rango Autorizado (Hasta)  & Último número de factura autorizado      \\
   Fecha Límite de Emisión   & Fecha máxima para emitir dentro del rango\\
@@ -250,11 +282,15 @@ correlativo independiente del correlativo de facturas.
 
 \begin{tabularx}{\linewidth}{>{\bfseries}l X}
   \toprule
-  Campo       & Descripción                                            \\
+  Campo          & Descripción                                          \\
   \midrule
-  Señor(es)   & Nombre completo o razón social del cliente             \\
-  Dirección   & Dirección del cliente                                  \\
-  RTN         & Registro Tributario Nacional del cliente (opcional)    \\
+  Señor(es)      & Razón social de la empresa cliente; si no hay empresa,
+                   se muestra el nombre del contacto                     \\
+  Razón Social   & Nombre de la empresa u organización del cliente      \\
+  Dirección      & Dirección del cliente                                \\
+  RTN            & Registro Tributario Nacional del cliente (opcional)  \\
+  Correo         & Correo electrónico del cliente (para envío de
+                   cotizaciones y notificaciones)                        \\
   \bottomrule
 \end{tabularx}
 
@@ -264,7 +300,8 @@ correlativo independiente del correlativo de facturas.
   \toprule
   Campo                         & Descripción                          \\
   \midrule
-  Número de Factura             & Correlativo en formato SAR           \\
+  Número de Documento           & Correlativo en formato SAR (factura)
+                                  o COT-XXXXXX (cotización)             \\
   Fecha                         & Fecha de emisión                     \\
   Lugar de Emisión              & Tegucigalpa, M.D.C.                  \\
   No.\ O/C Exenta               & Orden de compra exenta (si aplica)   \\
@@ -346,13 +383,13 @@ la norma de desglose de ISV incluido.}
   $\longrightarrow$ \textit{[Anulada (opcional)]}
 \end{center}
 
-\subsection{Flujo Cotización $\rightarrow$ Factura}
+\subsection{Flujo Cotización \texorpdfstring{$\rightarrow$}{→} Factura}
 
 \begin{center}
   \textbf{Nueva Cotización (pendiente)}
-  $\longrightarrow$ \textbf{Aceptada / Rechazada}
-  $\longrightarrow$ \textbf{Convertir a Factura}
-  $\longrightarrow$ \textbf{Factura Emitida}
+  $\longrightarrow$ \textbf{Enviada por correo al cliente}
+  $\longrightarrow$ \textbf{Aprobada / Rechazada por el cliente}
+  $\longrightarrow$ \textbf{Factura generada automáticamente}
 \end{center}
 
 \begin{itemize}
@@ -361,25 +398,126 @@ la norma de desglose de ISV incluido.}
   \item La factura resultante almacena \texttt{from\_cotizacion\_number}
         para trazabilidad.
   \item No se puede editar una cotización ya \textit{facturada}.
+  \item El cliente también puede aprobar o rechazar manualmente desde
+        el sistema interno sin necesidad de envío por correo.
 \end{itemize}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Flujo de Aprobación por Correo Electrónico}
+
+\subsection{Descripción del Flujo}
+
+\begin{enumerate}[label=\textbf{\arabic*.}]
+  \item El usuario envía la cotización al cliente por correo desde el
+        sistema, especificando el correo del destinatario.
+  \item El sistema genera un \textbf{token de aprobación único} (validez
+        de 7 días) y lo almacena junto con la cotización.
+  \item Se envía un correo HTML al cliente con:
+    \begin{itemize}
+      \item Nombre/razón social del cliente y RTN.
+      \item Número de cotización, fecha y total.
+      \item Tabla de servicios cotizados con precios.
+      \item Enlace \textbf{``Ver Cotización Completa / Imprimir PDF''}.
+      \item Botones de \textbf{Aprobar} y \textbf{Rechazar}.
+    \end{itemize}
+  \item El cliente abre el enlace y visualiza el documento formal completo
+        con el diseño oficial de la empresa.
+  \item Al aprobar, el sistema genera automáticamente la factura y notifica
+        al usuario interno.
+  \item Al rechazar, el cliente ingresa el motivo; el sistema registra la
+        razón de rechazo en la cotización.
+\end{enumerate}
+
+\subsection{Proveedores de Correo Soportados}
+
+\begin{tabularx}{\linewidth}{>{\bfseries}l X}
+  \toprule
+  Proveedor          & Método de Autenticación                             \\
+  \midrule
+  Gmail              & App Password (contraseña de aplicación de Google)   \\
+  Yahoo              & Contraseña / App Password                           \\
+  SMTP Personalizado & Host, puerto, usuario y contraseña configurables    \\
+  Outlook Personal   & OAuth2 via Microsoft Graph API (Device Code Flow)   \\
+  \bottomrule
+\end{tabularx}
+
+\subsection{Nota sobre Outlook Personal}
+
+Las cuentas personales de Outlook.com (\texttt{@outlook.com},
+\texttt{@hotmail.com}) no soportan autenticación SMTP básica desde 2023.
+El sistema implementa el flujo \textbf{OAuth2 Device Code} mediante
+Microsoft Graph API, que requiere el registro de una aplicación gratuita
+en Azure Portal (\texttt{portal.azure.com}) con soporte para cuentas
+personales de Microsoft.
 
 % ─────────────────────────────────────────────────────────────────────────────
 \section{API REST del Sistema}
 
-\begin{longtable}{>{\ttfamily\bfseries}l l X}
+\begin{longtable}{>{\ttfamily\small\bfseries}l l X}
   \toprule
-  \normalfont\textbf{Endpoint}   & \textbf{Método} & \textbf{Descripción} \\
+  \normalfont\textbf{Endpoint}          & \textbf{Método} & \textbf{Descripción} \\
   \midrule
   \endhead
-  /api/invoices                  & GET    & Listar facturas (filtros: doc\_type, from, to) \\
-  /api/invoices                  & POST   & Crear factura o cotización                    \\
-  /api/invoices/:id              & GET    & Obtener documento por ID                      \\
-  /api/invoices/:id              & PUT    & Editar cotización (si está pendiente)         \\
-  /api/invoices/:id/status       & PATCH  & Cambiar estado de cotización                  \\
-  /api/invoices/:id/convert      & POST   & Convertir cotización a factura                \\
-  /api/invoices/:id              & DELETE & Anular documento (soft delete)                \\
-  /api/config                    & GET    & Obtener configuración de empresa              \\
-  /api/config                    & PUT    & Actualizar configuración de empresa           \\
+  \multicolumn{3}{l}{\textit{Autenticación (públicas)}} \\
+  /api/auth/login                       & POST   & Iniciar sesión, retorna JWT        \\
+  /api/auth/users                       & GET    & Listar usuarios del sistema        \\
+  /api/auth/users                       & POST   & Crear nuevo usuario                \\
+  /api/auth/users/:id                   & DELETE & Eliminar usuario                   \\
+  /api/auth/users/:id/password          & PUT    & Cambiar contraseña                 \\
+  \midrule
+  \multicolumn{3}{l}{\textit{Facturas y Cotizaciones (protegidas)}} \\
+  /api/invoices                         & GET    & Listar documentos (filtros: tipo, fecha) \\
+  /api/invoices                         & POST   & Crear factura o cotización         \\
+  /api/invoices/:id                     & GET    & Obtener documento por ID           \\
+  /api/invoices/:id                     & PUT    & Editar cotización pendiente        \\
+  /api/invoices/:id/status              & PATCH  & Cambiar estado de cotización       \\
+  /api/invoices/:id/convert             & POST   & Convertir cotización a factura     \\
+  /api/invoices/:id                     & DELETE & Anular documento                   \\
+  /api/invoices/:id/enviar-cotizacion   & POST   & Enviar cotización por correo       \\
+  \midrule
+  \multicolumn{3}{l}{\textit{Clientes (protegidas)}} \\
+  /api/clientes                         & GET    & Listar clientes                    \\
+  /api/clientes                         & POST   & Crear cliente                      \\
+  /api/clientes/:id                     & GET    & Obtener cliente                    \\
+  /api/clientes/:id                     & PUT    & Actualizar cliente                 \\
+  /api/clientes/:id                     & DELETE & Eliminar cliente                   \\
+  /api/clientes/:id/documentos          & GET    & Facturas/cotizaciones del cliente  \\
+  /api/clientes/report                  & GET    & Reporte de clientes                \\
+  \midrule
+  \multicolumn{3}{l}{\textit{Servicios (protegidas)}} \\
+  /api/servicios                        & GET    & Listar servicios                   \\
+  /api/servicios                        & POST   & Crear servicio                     \\
+  /api/servicios/:id                    & PUT    & Actualizar servicio                \\
+  /api/servicios/:id                    & DELETE & Eliminar servicio                  \\
+  /api/servicios/categorias             & GET    & Listar categorías de servicios     \\
+  \midrule
+  \multicolumn{3}{l}{\textit{Gastos (protegidas)}} \\
+  /api/gastos                           & GET    & Listar gastos                      \\
+  /api/gastos                           & POST   & Crear gasto                        \\
+  /api/gastos/:id                       & PUT    & Actualizar gasto                   \\
+  /api/gastos/:id                       & DELETE & Eliminar gasto                     \\
+  /api/gastos/categorias                & GET    & Listar categorías de gastos        \\
+  \midrule
+  \multicolumn{3}{l}{\textit{Reportes y Finanzas (protegidas)}} \\
+  /api/reportes/resumen                 & GET    & Resumen general de ventas          \\
+  /api/reportes/por-fecha               & GET    & Reporte de ventas por período      \\
+  /api/reportes/por-cliente             & GET    & Reporte de ventas por cliente      \\
+  /api/reportes/por-servicio            & GET    & Reporte de ventas por servicio     \\
+  /api/finanzas/resumen                 & GET    & Resumen financiero consolidado     \\
+  \midrule
+  \multicolumn{3}{l}{\textit{Configuración (protegida)}} \\
+  /api/config                           & GET    & Obtener configuración de empresa   \\
+  /api/config                           & PUT    & Actualizar configuración           \\
+  \midrule
+  \multicolumn{3}{l}{\textit{Correo Outlook OAuth2 (protegidas)}} \\
+  /api/email/outlook/init               & POST   & Iniciar flujo de autorización      \\
+  /api/email/outlook/poll               & POST   & Consultar estado de autorización   \\
+  /api/email/outlook/status             & GET    & Verificar conexión activa          \\
+  /api/email/outlook/disconnect         & DELETE & Desconectar cuenta Outlook         \\
+  \midrule
+  \multicolumn{3}{l}{\textit{Respuesta pública de cotizaciones (sin autenticación)}} \\
+  /api/cotizacion-respuesta/:token      & GET    & Obtener cotización por token       \\
+  /api/cotizacion-respuesta/:token      & POST   & Aprobar o rechazar cotización      \\
   \bottomrule
 \end{longtable}
 
@@ -387,17 +525,22 @@ la norma de desglose de ISV incluido.}
 \section{Seguridad y Control de Datos}
 
 \begin{itemize}
+  \item \textbf{Autenticación JWT:} Todas las rutas protegidas requieren un
+        token Bearer válido. Los tokens se generan al iniciar sesión y tienen
+        expiración configurable.
+  \item \textbf{Contraseñas cifradas:} Las contraseñas de usuarios se almacenan
+        con hash bcrypt; nunca en texto plano.
+  \item \textbf{Tokens de aprobación:} Los tokens de aprobación de cotizaciones
+        son aleatorios de 32 bytes (256 bits), únicos por cotización y con
+        expiración de 7 días. Se invalidan tras ser usados.
   \item \textbf{Eliminación lógica (Soft Delete):} Los documentos anulados
-        no se eliminan físicamente; se marca el campo
-        \texttt{status = 'anulada'} para mantener auditoría.
-  \item \textbf{Integridad referencial:} Una factura generada desde
-        cotización almacena el ID y número de la cotización original.
-  \item \textbf{Consecutivo correlativo:} El sistema incrementa
-        automáticamente el número de factura dentro del rango autorizado.
-  \item \textbf{Validación de rangos:} El sistema está preparado para
-        verificar que el correlativo no exceda el rango autorizado por el SAR.
-  \item \textbf{Sin conexión a internet requerida:} El sistema opera
-        localmente; los datos nunca salen de la red interna.
+        no se eliminan físicamente; se marca \texttt{status = `anulada'}.
+  \item \textbf{Credenciales SMTP protegidas:} El endpoint público de
+        cotizaciones excluye las credenciales SMTP de la respuesta.
+  \item \textbf{Integridad referencial:} Una factura generada desde cotización
+        almacena el ID y número de la cotización original para trazabilidad.
+  \item \textbf{Consecutivo correlativo:} El sistema incrementa automáticamente
+        el número de factura dentro del rango autorizado.
 \end{itemize}
 
 % ─────────────────────────────────────────────────────────────────────────────
@@ -411,16 +554,15 @@ la norma de desglose de ISV incluido.}
   \item La hoja impresa incluye todos los campos obligatorios del SAR:
         CAI, RTN, rango autorizado, fecha límite de emisión, totales
         desglosados e ISV.
-  \item Las cotizaciones impresas \textbf{no muestran} CAI ni información
-        fiscal, al ser documentos pre-venta.
+  \item Las cotizaciones muestran el RTN del emisor pero \textbf{no muestran}
+        CAI ni información de rango autorizado, al ser documentos pre-venta.
+  \item El cliente puede imprimir la cotización directamente desde el
+        enlace de aprobación enviado por correo, visualizando el documento
+        formal completo.
 \end{itemize}
 
 % ─────────────────────────────────────────────────────────────────────────────
 \section{Requisitos para Registro y Autorización SAR}
-
-A continuación se presenta una lista de los documentos e información
-que típicamente solicita el SAR de Honduras para la autorización de
-correlativo de facturas:
 
 \subsection{Documentos Legales de la Empresa}
 
@@ -445,7 +587,7 @@ correlativo de facturas:
         fecha, rango, venta gravada, exonerada, exenta, ISV 15\%,
         total, suma en letras.
   \item \textbf{Respaldo de datos:} Archivos locales \texttt{.db}
-        (NeDB); posibilidad de exportación a CSV.
+        (NeDB); posibilidad de exportación a CSV/Excel.
   \item \textbf{Impresión/PDF:} Generación vía navegador web en
         formato carta.
 \end{enumerate}
@@ -472,17 +614,21 @@ correlativo de facturas:
 
 \begin{tabularx}{\linewidth}{>{\bfseries}l X}
   \toprule
-  Término  & Definición                                                   \\
+  Término    & Definición                                                   \\
   \midrule
-  SAR      & Servicio de Administración de Rentas de Honduras             \\
-  RTN      & Registro Tributario Nacional                                 \\
-  CAI      & Código de Autorización de Impresión                          \\
-  ISV      & Impuesto Sobre Ventas (15\%)                                 \\
-  ISR      & Impuesto Sobre la Renta                                      \\
-  SPA      & Single Page Application (aplicación web de página única)    \\
-  API REST & Interfaz de programación basada en HTTP con JSON             \\
-  NeDB     & Node Embedded Database (base de datos embebida en Node.js)  \\
-  HNL      & Lempira Hondureño (moneda nacional)                          \\
+  SAR        & Servicio de Administración de Rentas de Honduras             \\
+  RTN        & Registro Tributario Nacional                                 \\
+  CAI        & Código de Autorización de Impresión                          \\
+  ISV        & Impuesto Sobre Ventas (15\%)                                 \\
+  ISR        & Impuesto Sobre la Renta                                      \\
+  JWT        & JSON Web Token (token de autenticación firmado digitalmente) \\
+  OAuth2     & Protocolo de autorización delegada (usado para Outlook)      \\
+  Graph API  & API de Microsoft para acceso a servicios de Microsoft 365    \\
+  SMTP       & Simple Mail Transfer Protocol (protocolo de envío de correo) \\
+  SPA        & Single Page Application (aplicación web de página única)    \\
+  API REST   & Interfaz de programación basada en HTTP con JSON             \\
+  NeDB       & Node Embedded Database (base de datos embebida en Node.js)  \\
+  HNL        & Lempira Hondureño (moneda nacional)                          \\
   \bottomrule
 \end{tabularx}
 
@@ -490,8 +636,10 @@ correlativo de facturas:
 \vspace{1cm}
 \begin{center}
   \rule{0.5\linewidth}{0.5pt}\\[0.3cm]
-  {\small Documento generado por DEVS MRS S.\ de R.\ L.\ --- Abril 2026\\
-  Para uso en trámites de registro y autorización ante el SAR de Honduras.}
+  {\small Documento generado por DEVS MRS S.\ de R.\ L.\ --- Mayo 2026\\
+  Para uso en trámites de registro y autorización ante el SAR de Honduras.\\
+  Versión 2.0 --- Incluye módulos de clientes, servicios, gastos, reportería,
+  finanzas, envío de cotizaciones por correo y autenticación de usuarios.}
 \end{center}
 
 \end{document}

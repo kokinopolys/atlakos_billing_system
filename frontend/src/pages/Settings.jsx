@@ -1,16 +1,22 @@
 import { useState, useEffect } from 'react'
 import { api } from '../utils/api'
 
-function TestEmailButton({ smtpUser }) {
+function TestEmailButton({ form }) {
   const [testing, setTesting] = useState(false)
   const handleTest = async () => {
-    const to = smtpUser || window.prompt('Correo de destino para la prueba:')
+    const to = form.smtp_user || window.prompt('Correo de destino para la prueba:')
     if (!to) return
     setTesting(true)
-    const result = await api.testEmail(to)
-    setTesting(false)
-    if (result?.error) alert('Error SMTP:\n\n' + result.error)
-    else alert('✅ Correo de prueba enviado a ' + to + '\nRevisa tu bandeja de entrada (y spam).')
+    try {
+      const emailConfig = { provider: form.smtp_provider || 'gmail', user: form.smtp_user, pass: form.smtp_pass }
+      const result = await api.testEmail(to, emailConfig)
+      if (result?.error) alert('Error SMTP:\n\n' + result.error)
+      else alert('✅ Correo de prueba enviado a ' + to + '\nRevisa tu bandeja de entrada (y spam).')
+    } catch (err) {
+      alert('Error de red o servidor:\n\n' + err.message)
+    } finally {
+      setTesting(false)
+    }
   }
   return (
     <button type="button" onClick={handleTest} disabled={testing}
@@ -200,7 +206,7 @@ export default function Settings() {
             </div>
           )}
           <div className="px-6 pb-5">
-            <TestEmailButton smtpUser={form.smtp_user} />
+            <TestEmailButton form={form} />
           </div>
         </div>
 

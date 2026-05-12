@@ -299,11 +299,12 @@ function buildVoucherHtml({ voucher, companyName, companyAddress }) {
 </body></html>`;
 }
 
-async function sendVoucherEmail({ voucher, employeeEmail, companyName }) {
-  const provider = await getStoredConfig('smtp_provider') || 'gmail';
-  const user     = await getStoredConfig('smtp_user') || '';
-  const pass     = await getStoredConfig('smtp_pass') || '';
+async function sendVoucherEmail({ voucher, employeeEmail, companyName, emailConfig: inline }) {
+  const provider = inline?.provider || await getStoredConfig('smtp_provider') || 'gmail';
+  const user     = inline?.user     || await getStoredConfig('smtp_user') || '';
+  const pass     = inline?.pass     || await getStoredConfig('smtp_pass') || '';
   const companyAddress = await getStoredConfig('company_address') || '';
+  if (!user || !pass) throw new Error('No hay credenciales SMTP configuradas. Guarda el correo y contraseña en Configuración.');
   const transporter = getTransporter({ provider, user, pass });
   const html = buildVoucherHtml({ voucher, companyName, companyAddress });
   await transporter.sendMail({

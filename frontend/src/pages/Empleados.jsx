@@ -224,11 +224,13 @@ function VouchersPanel({ employee, onClose }) {
 
   const handleSave = async (payload, sendEmail) => {
     const saved = await api.createVoucher(employee._id, payload)
-    if (sendEmail && saved._id) {
+    if (!saved?._id) { alert('Error al guardar el voucher'); return }
+    if (sendEmail) {
       setSending(saved._id)
-      try { await api.sendVoucher(saved._id) }
-      catch (e) { alert('Voucher guardado, pero falló el envío de correo:\n' + e.message) }
+      const result = await api.sendVoucher(saved._id)
       setSending(null)
+      if (result?.error) alert('Voucher guardado, pero falló el envío:\n\n' + result.error)
+      else alert('Correo enviado exitosamente a ' + employee.email)
     }
     setShowNew(false)
     load()
@@ -236,13 +238,10 @@ function VouchersPanel({ employee, onClose }) {
 
   const handleResend = async (id) => {
     setSending(id)
-    try {
-      await api.sendVoucher(id)
-      alert('Correo enviado exitosamente')
-      load()
-    } catch (e) {
-      alert('Error al enviar correo:\n' + e.message)
-    } finally { setSending(null) }
+    const result = await api.sendVoucher(id)
+    setSending(null)
+    if (result?.error) alert('Error al enviar correo:\n\n' + result.error)
+    else { alert('Correo enviado exitosamente'); load() }
   }
 
   return (
@@ -376,12 +375,12 @@ export default function Empleados() {
             className="border border-gray-300 rounded-lg px-3 py-2 text-sm w-72 focus:outline-none focus:ring-1 focus:ring-blue-400" />
         </div>
 
-        <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-          <table className="w-full text-sm">
+        <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-x-auto">
+          <table className="w-full text-sm min-w-[860px]">
             <thead>
               <tr className="border-b border-gray-200 bg-gray-50">
                 {['Código','Nombre','Cédula','Cargo','Departamento','Salario Base','Correo','Acciones'].map(h => (
-                  <th key={h} className={`px-4 py-3 font-semibold text-gray-600 ${h === 'Salario Base' ? 'text-right' : h === 'Acciones' ? 'text-center' : 'text-left'}`}>{h}</th>
+                  <th key={h} className={`px-4 py-3 font-semibold text-gray-600 whitespace-nowrap ${h === 'Salario Base' ? 'text-right' : h === 'Acciones' ? 'text-center' : 'text-left'}`}>{h}</th>
                 ))}
               </tr>
             </thead>
@@ -395,14 +394,14 @@ export default function Empleados() {
                 </td></tr>
               ) : filtered.map(e => (
                 <tr key={e._id} className="border-b border-gray-100 hover:bg-gray-50">
-                  <td className="px-4 py-3 font-mono text-xs text-gray-400">{e.code || '—'}</td>
-                  <td className="px-4 py-3 font-semibold text-gray-900">{e.name}</td>
-                  <td className="px-4 py-3 text-gray-600">{e.cedula || '—'}</td>
-                  <td className="px-4 py-3 text-gray-600">{e.cargo || '—'}</td>
-                  <td className="px-4 py-3 text-gray-600">{e.departamento || '—'}</td>
-                  <td className="px-4 py-3 text-right text-gray-700 font-semibold">{e.salario_base ? fmt(e.salario_base) : '—'}</td>
-                  <td className="px-4 py-3 text-gray-500 text-xs">{e.email || '—'}</td>
-                  <td className="px-4 py-3">
+                  <td className="px-4 py-3 font-mono text-xs text-gray-400 whitespace-nowrap">{e.code || '—'}</td>
+                  <td className="px-4 py-3 font-semibold text-gray-900 whitespace-nowrap">{e.name}</td>
+                  <td className="px-4 py-3 text-gray-600 whitespace-nowrap">{e.cedula || '—'}</td>
+                  <td className="px-4 py-3 text-gray-600 whitespace-nowrap">{e.cargo || '—'}</td>
+                  <td className="px-4 py-3 text-gray-600 whitespace-nowrap">{e.departamento || '—'}</td>
+                  <td className="px-4 py-3 text-right text-gray-700 font-semibold whitespace-nowrap">{e.salario_base ? fmt(e.salario_base) : '—'}</td>
+                  <td className="px-4 py-3 text-gray-500 text-xs max-w-[160px] truncate">{e.email || '—'}</td>
+                  <td className="px-4 py-3 whitespace-nowrap">
                     <div className="flex items-center justify-center gap-1.5">
                       <button onClick={() => setVPanel(e)}
                         className="text-xs font-semibold px-2 py-1 rounded-lg text-white" style={{ backgroundColor: ACCENT }}>
