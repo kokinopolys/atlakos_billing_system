@@ -15,7 +15,16 @@ let invoicesDb, configDb, usersDb, clientesDb, serviciosDb, gastosDb,
 class MongoCollection {
   constructor(col) { this._col = col; }
 
-  find(query = {})   { return this._col.find(query).toArray(); }
+  find(query = {}) {
+    let cursor = this._col.find(query);
+    // Return a thenable with .sort() chaining so routes work unchanged
+    const api = {
+      sort(spec) { cursor = cursor.sort(spec); return api; },
+      then(res, rej) { return cursor.toArray().then(res, rej); },
+      catch(rej)     { return cursor.toArray().catch(rej); },
+    };
+    return api;
+  }
   findOne(query = {}) { return this._col.findOne(query); }
 
   async insert(doc) {
