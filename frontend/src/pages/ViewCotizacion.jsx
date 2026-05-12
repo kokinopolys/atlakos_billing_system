@@ -15,6 +15,7 @@ function StatusBadge({ status }) {
 const PROVIDERS = [
   { value: 'outlook_oauth2', label: 'Outlook Personal (OAuth2 — Recomendado)' },
   { value: 'gmail',          label: 'Gmail (App Password)' },
+  { value: 'resend',         label: 'Resend (API Key)' },
   { value: 'yahoo',          label: 'Yahoo' },
   { value: 'custom',         label: 'SMTP Personalizado' },
 ]
@@ -239,7 +240,7 @@ function SendEmailModal({ cotizacion, onClose, onSent }) {
                   </div>
                   <div>
                     <label className="block text-xs font-semibold text-gray-600 mb-1">
-                      {provider === 'gmail' ? 'Contraseña de App (App Password)' : 'Contraseña'}
+                      {provider === 'gmail' ? 'Contraseña de App (App Password)' : provider === 'resend' ? 'API Key (re_...)' : 'Contraseña'}
                     </label>
                     <input type="password" value={pass} onChange={e => setPass(e.target.value)}
                            className={inp} placeholder="••••••••" autoComplete="new-password" />
@@ -261,6 +262,11 @@ function SendEmailModal({ cotizacion, onClose, onSent }) {
                   {provider === 'gmail' && (
                     <p className="text-xs text-amber-600 bg-amber-50 rounded-lg px-3 py-2">
                       Usa una <strong>App Password</strong> (no tu contraseña normal). Actívala en: Google Account → Seguridad → Verificación en 2 pasos → Contraseñas de aplicación.
+                    </p>
+                  )}
+                  {provider === 'resend' && (
+                    <p className="text-xs text-purple-700 bg-purple-50 rounded-lg px-3 py-2">
+                      <strong>Correo remitente</strong> = email de tu dominio verificado en resend.com. <strong>Contraseña</strong> = API Key (<code>re_...</code>).
                     </p>
                   )}
                 </>
