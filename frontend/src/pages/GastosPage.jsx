@@ -9,6 +9,7 @@ function GastoModal({ gasto, categorias, onClose, onSave }) {
   const today = new Date().toLocaleDateString('en-CA')
   const [form, setForm] = useState({
     description: '', monto: '', categoria: 'Otros', date: today, notes: '',
+    tipo_pago: 'al_contado', fecha_limite_pago: '',
     ...(gasto || {}),
   })
   const [saving, setSaving] = useState(false)
@@ -62,6 +63,19 @@ function GastoModal({ gasto, categorias, onClose, onSave }) {
               {(categorias || []).map(c => <option key={c} value={c}>{c}</option>)}
             </select>
           </div>
+          <div>
+            <label className="block text-xs font-semibold text-gray-600 mb-1">Tipo de Pago</label>
+            <select value={form.tipo_pago || 'al_contado'} onChange={e => setForm(p => ({ ...p, tipo_pago: e.target.value, fecha_limite_pago: '' }))} className={inp}>
+              <option value="al_contado">Al Contado</option>
+              <option value="credito">Crédito / A Plazo</option>
+            </select>
+          </div>
+          {form.tipo_pago && form.tipo_pago !== 'al_contado' && (
+            <div>
+              <label className="block text-xs font-semibold text-gray-600 mb-1">Fecha Límite de Pago</label>
+              <input type="date" value={form.fecha_limite_pago || ''} onChange={e => setForm(p => ({ ...p, fecha_limite_pago: e.target.value }))} className={inp} />
+            </div>
+          )}
           <div>
             <label className="block text-xs font-semibold text-gray-600 mb-1">Notas</label>
             <textarea value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} className={inp} rows={2} placeholder="Notas opcionales..." />
@@ -192,10 +206,12 @@ export default function GastosPage() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="bg-gray-50 border-b border-gray-200">
-                    <SortTh label="Descripción" col="description" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} className="text-xs uppercase" />
-                    <SortTh label="Categoría"   col="categoria"   sortKey={sortKey} sortDir={sortDir} onSort={handleSort} className="text-xs uppercase" />
-                    <SortTh label="Fecha"       col="date"        sortKey={sortKey} sortDir={sortDir} onSort={handleSort} className="text-xs uppercase" />
-                    <SortTh label="Monto"       col="monto"       sortKey={sortKey} sortDir={sortDir} onSort={handleSort} align="right" className="text-xs uppercase" />
+                    <SortTh label="Descripción"     col="description"      sortKey={sortKey} sortDir={sortDir} onSort={handleSort} className="text-xs uppercase" />
+                    <SortTh label="Categoría"       col="categoria"        sortKey={sortKey} sortDir={sortDir} onSort={handleSort} className="text-xs uppercase" />
+                    <SortTh label="Fecha"           col="date"             sortKey={sortKey} sortDir={sortDir} onSort={handleSort} className="text-xs uppercase" />
+                    <SortTh label="Tipo Pago"       col="tipo_pago"        sortKey={sortKey} sortDir={sortDir} onSort={handleSort} className="text-xs uppercase" />
+                    <SortTh label="Fecha Límite"    col="fecha_limite_pago" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} className="text-xs uppercase" />
+                    <SortTh label="Monto"           col="monto"            sortKey={sortKey} sortDir={sortDir} onSort={handleSort} align="right" className="text-xs uppercase" />
                     <th className="text-center px-4 py-3 text-xs font-semibold text-gray-500 uppercase border-b border-gray-200">Acciones</th>
                   </tr>
                 </thead>
@@ -207,6 +223,15 @@ export default function GastosPage() {
                         <span className="text-xs px-2 py-0.5 rounded-full bg-red-100 text-red-700 font-medium">{g.categoria}</span>
                       </td>
                       <td className="px-4 py-3 text-gray-500">{g.date}</td>
+                      <td className="px-4 py-3">
+                        {(!g.tipo_pago || g.tipo_pago === 'al_contado')
+                          ? <span className="text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-700 font-medium">Al Contado</span>
+                          : <span className="text-xs px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 font-medium">Crédito</span>
+                        }
+                      </td>
+                      <td className="px-4 py-3 text-gray-500 text-sm">
+                        {g.fecha_limite_pago || <span className="text-gray-300">—</span>}
+                      </td>
                       <td className="px-4 py-3 text-right font-bold text-red-600">L. {fmt(g.monto)}</td>
                       <td className="px-4 py-3 text-center">
                         <div className="flex items-center justify-center gap-2">
@@ -223,7 +248,7 @@ export default function GastosPage() {
                     </tr>
                   ))}
                   {gastos.length === 0 && (
-                    <tr><td colSpan={5} className="text-center text-gray-400 py-10">No hay gastos registrados.</td></tr>
+                    <tr><td colSpan={7} className="text-center text-gray-400 py-10">No hay gastos registrados.</td></tr>
                   )}
                 </tbody>
               </table>

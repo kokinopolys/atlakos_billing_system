@@ -1,9 +1,41 @@
 const express = require('express');
 const router = express.Router();
-const { invoicesDb, configDb } = require('../db/database');
+const { invoicesDb, configDb, cxcDb } = require('../db/database');
 const { numberToWords } = require('../services/numberToWords');
 const { generateApprovalToken, sendCotizacionEmail } = require('../services/emailService');
 const { nowHN } = require('../utils/time');
+
+async function nextCxcNumber() {
+  const seq = await configDb.findOne({ key: 'cxc_sequence' });
+  const n = seq ? parseInt(seq.value) + 1 : 1;
+  if (seq) await configDb.update({ key: 'cxc_sequence' }, { $set: { value: String(n) } });
+  else     await configDb.insert({ key: 'cxc_sequence', value: String(n) });
+  return 'CXC-' + String(n).padStart(6, '0');
+}
+
+async function createCxcForCotizacion(cot) {
+  const existing = await cxcDb.findOne({ source: 'cotizacion', source_id: cot._id });
+  if (existing) return;
+  const number = await nextCxcNumber();
+  await cxcDb.insert({
+    number,
+    description:  `${cot.invoice_number} — ${cot.client_company || cot.client_name}`,
+    client_name:  cot.client_company || cot.client_name,
+    amount:       cot.total,
+    date:         cot.date,
+    due_date:     '',
+    status:       'pendiente',
+    paid_amount:  0,
+    source:       'cotizacion',
+    source_id:    cot._id,
+    created_at:   nowHN(),
+  });
+}
+
+async function updateCxcStatus(cotId, status) {
+  const entry = await cxcDb.findOne({ source: 'cotizacion', source_id: cotId });
+  if (entry) await cxcDb.update({ _id: entry._id }, { $set: { status } });
+}
 
 async function getConfig(key) {
   const row = await configDb.findOne({ key });
@@ -140,6 +172,8 @@ router.post('/', async (req, res) => {
 
     const inserted = await invoicesDb.insert(doc);
     await setConfig(seqKey, String(seq + 1));
+
+    if (isCotizacion) await createCxcForCotizacion(inserted).catch(console.error);
 
     res.status(201).json(parseItems(inserted));
   } catch (err) {
@@ -280,6 +314,8 @@ router.post('/:id/convert', async (req, res) => {
       { $set: { status: 'facturada', converted_invoice_id: inserted._id, converted_invoice_number: newInvoiceNumber } }
     );
 
+    await updateCxcStatus(cot._id, 'pagada').catch(console.error);
+
     res.status(201).json(parseItems(inserted));
   } catch (err) {
     console.error(err);
@@ -294,6 +330,9 @@ router.delete('/:id', async (req, res) => {
     if (!row) return res.status(404).json({ error: 'Documento no encontrado' });
     await invoicesDb.update({ _id: req.params.id }, { $set: { status: 'anulada' } });
     const updated = await invoicesDb.findOne({ _id: req.params.id });
+
+    if (row.doc_type === 'cotizacion') await updateCxcStatus(row._id, 'anulada').catch(console.error);
+
     res.json({ success: true, invoice: parseItems(updated) });
   } catch (err) {
     console.error(err);
