@@ -9,6 +9,7 @@ const STATUS = {
   pagada:    { label: 'Pagada',    bg: '#DCFCE7', text: '#166534' },
   vencida:   { label: 'Vencida',   bg: '#FEE2E2', text: '#991B1B' },
   parcial:   { label: 'Parcial',   bg: '#DBEAFE', text: '#1E40AF' },
+  anulada:   { label: 'Anulada',   bg: '#F3F4F6', text: '#6B7280' },
 }
 
 function Badge({ status }) {
@@ -215,28 +216,33 @@ export default function CXC() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-gray-200 bg-gray-50">
-                  {['No.','Fecha','Vence','Cliente','Descripción','Referencia','Monto','Estado','Acciones'].map(h => (
-                    <th key={h} className={`px-4 py-3 font-semibold text-gray-600 ${h === 'Monto' ? 'text-right' : h === 'Estado' || h === 'Acciones' ? 'text-center' : 'text-left'}`}>{h}</th>
+                  {['No.','Fecha','Vence','Cliente','Descripción','Referencia','Origen','Monto','Estado','Acciones'].map(h => (
+                    <th key={h} className={`px-4 py-3 font-semibold text-gray-600 whitespace-nowrap ${h === 'Monto' ? 'text-right' : h === 'Estado' || h === 'Acciones' || h === 'Origen' ? 'text-center' : 'text-left'}`}>{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
                 {loading ? (
-                  <tr><td colSpan={9} className="text-center py-8 text-gray-400">Cargando...</td></tr>
+                  <tr><td colSpan={10} className="text-center py-8 text-gray-400">Cargando...</td></tr>
                 ) : filtered.length === 0 ? (
-                  <tr><td colSpan={9} className="text-center py-12 text-gray-400">
+                  <tr><td colSpan={10} className="text-center py-12 text-gray-400">
                     <div className="text-4xl mb-2">📭</div>
                     <p>No hay cuentas por cobrar registradas</p>
                   </td></tr>
                 ) : filtered.map(e => (
                   <tr key={e._id} className="border-b border-gray-100 hover:bg-gray-50">
-                    <td className="px-4 py-3 font-mono text-xs text-gray-400">{e.number || '—'}</td>
+                    <td className="px-4 py-3 font-mono text-xs text-gray-400 whitespace-nowrap">{e.number || '—'}</td>
                     <td className="px-4 py-3 text-gray-700 whitespace-nowrap">{e.date}</td>
                     <td className="px-4 py-3 text-gray-700 whitespace-nowrap">{e.due_date || '—'}</td>
-                    <td className="px-4 py-3 font-semibold text-gray-900">{e.client_name}</td>
+                    <td className="px-4 py-3 font-semibold text-gray-900 whitespace-nowrap">{e.client_name}</td>
                     <td className="px-4 py-3 text-gray-600 max-w-xs truncate">{e.description || '—'}</td>
-                    <td className="px-4 py-3 font-mono text-xs text-gray-500">{e.reference || '—'}</td>
-                    <td className="px-4 py-3 text-right font-semibold text-gray-900">{fmt(e.amount)}</td>
+                    <td className="px-4 py-3 font-mono text-xs text-gray-500 whitespace-nowrap">{e.reference || '—'}</td>
+                    <td className="px-4 py-3 text-center">
+                      {e.source === 'cotizacion'
+                        ? <span className="text-xs px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 font-semibold">Cotización</span>
+                        : <span className="text-xs text-gray-400">Manual</span>}
+                    </td>
+                    <td className="px-4 py-3 text-right font-semibold text-gray-900 whitespace-nowrap">{fmt(e.amount)}</td>
                     <td className="px-4 py-3 text-center"><Badge status={e.status} /></td>
                     <td className="px-4 py-3">
                       <div className="flex items-center justify-center gap-1.5">
