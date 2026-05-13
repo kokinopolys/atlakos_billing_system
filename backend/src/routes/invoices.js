@@ -182,6 +182,25 @@ router.post('/', async (req, res) => {
   }
 });
 
+// POST /api/invoices/sync-cxc — backfill CXC for all existing cotizaciones
+router.post('/sync-cxc', async (req, res) => {
+  try {
+    const cotizaciones = await invoicesDb.find({ doc_type: 'cotizacion' });
+    let synced = 0;
+    for (const cot of cotizaciones) {
+      if (cot.status === 'rechazada') continue;
+      await createCxcForCotizacion(cot);
+      if (cot.status === 'facturada') await updateCxcStatus(cot._id, 'pagada');
+      else if (cot.status === 'anulada') await updateCxcStatus(cot._id, 'anulada');
+      synced++;
+    }
+    res.json({ synced });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // GET /api/invoices/:id
 router.get('/:id', async (req, res) => {
   try {

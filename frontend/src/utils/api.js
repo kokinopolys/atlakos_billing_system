@@ -93,6 +93,7 @@ export const api = {
   updateCXC:     (id, data)    => put(`${BASE}/cxc/${id}`, data),
   payCXC:        (id, data)    => patch(`${BASE}/cxc/${id}/pay`, data),
   deleteCXC:     (id)          => del(`${BASE}/cxc/${id}`),
+  syncCxc:       ()            => post(`${BASE}/invoices/sync-cxc`, {}),
 
   // CXP (Cuentas por Pagar)
   getCXP:        (params = {}) => get(`${BASE}/cxp?${new URLSearchParams(params)}`),

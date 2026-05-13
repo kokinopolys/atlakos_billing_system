@@ -126,10 +126,11 @@ function PayModal({ entry, onClose, onPay }) {
 export default function CXC() {
   const [entries, setEntries] = useState([])
   const [resumen, setResumen] = useState({ pendiente: 0, cobrada: 0, vencida: 0 })
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading]   = useState(true)
+  const [syncing, setSyncing]   = useState(false)
   const [statusFilter, setStatusFilter] = useState('all')
-  const [search, setSearch] = useState('')
-  const [modal, setModal] = useState(null)
+  const [search, setSearch]     = useState('')
+  const [modal, setModal]       = useState(null)
   const [selected, setSelected] = useState(null)
 
   const load = useCallback(async () => {
@@ -178,9 +179,25 @@ export default function CXC() {
           <h1 className="text-xl font-bold text-white">Cuentas por Cobrar (CXC)</h1>
           <p className="text-green-100 text-sm">Registro de cobros pendientes y realizados</p>
         </div>
-        <button onClick={() => setModal('new')} className="px-4 py-2 rounded-lg font-bold text-sm bg-white" style={{ color: ACCENT }}>
-          + Nueva CXC
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={async () => {
+              setSyncing(true)
+              try {
+                const r = await api.syncCxc()
+                alert(`Sincronización completada. ${r.synced ?? 0} cotizaciones procesadas.`)
+                load()
+              } catch { alert('Error al sincronizar') }
+              finally { setSyncing(false) }
+            }}
+            disabled={syncing}
+            className="px-3 py-2 rounded-lg font-bold text-sm bg-white/20 text-white hover:bg-white/30 disabled:opacity-50">
+            {syncing ? 'Sincronizando...' : '🔄 Sincronizar Cotizaciones'}
+          </button>
+          <button onClick={() => setModal('new')} className="px-4 py-2 rounded-lg font-bold text-sm bg-white" style={{ color: ACCENT }}>
+            + Nueva CXC
+          </button>
+        </div>
       </div>
 
       <div className="p-6 max-w-6xl mx-auto space-y-5">
