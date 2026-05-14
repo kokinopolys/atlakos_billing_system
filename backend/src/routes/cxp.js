@@ -28,6 +28,7 @@ router.get('/resumen', async (req, res) => {
     const t = today();
     let pendiente = 0, pagada = 0, vencida = 0;
     for (const d of docs) {
+      if (d.status === 'anulada') continue;
       const amount = parseFloat(d.amount) || 0;
       const paid   = parseFloat(d.paid_amount) || 0;
       if (d.status === 'pagada')                           pagada    += amount;
@@ -76,7 +77,7 @@ router.patch('/:id/pay', async (req, res) => {
     const total  = parseFloat(doc.amount) || 0;
     const paid   = parseFloat(req.body.paid_amount) ?? total;
     const status = paid >= total ? 'pagada' : 'parcial';
-    await cxpDb.update({ _id: req.params.id }, { $set: { paid_amount: paid, paid_date: req.body.paid_date || today(), status } });
+    await cxpDb.update({ _id: req.params.id }, { $set: { paid_amount: paid, paid_date: req.body.paid_date || today(), payment_method: req.body.payment_method || '', status } });
     res.json(await cxpDb.findOne({ _id: req.params.id }));
   } catch (err) { res.status(500).json({ error: err.message }); }
 });

@@ -26,13 +26,8 @@ async function nextCxpNumber() {
 }
 
 async function syncCxpForGasto(gasto) {
-  const isCredit = gasto.tipo_pago && gasto.tipo_pago !== 'al_contado';
-  const existing = await cxpDb.findOne({ source: 'gasto', source_id: gasto._id });
-
-  if (!isCredit) {
-    if (existing) await cxpDb.remove({ _id: existing._id });
-    return;
-  }
+  const isContado = !gasto.tipo_pago || gasto.tipo_pago === 'al_contado';
+  const existing  = await cxpDb.findOne({ source: 'gasto', source_id: gasto._id });
 
   const payload = {
     supplier_name: gasto.description,
@@ -41,21 +36,33 @@ async function syncCxpForGasto(gasto) {
     date:          gasto.date,
     due_date:      gasto.fecha_limite_pago || '',
     reference:     gasto.tipo_pago || '',
+    plan:          gasto.tipo_pago || 'al_contado',
     source:        'gasto',
     source_id:     gasto._id,
   };
 
+  const newStatus = isContado ? 'pagada' : 'pendiente';
+
   if (existing) {
-    if (existing.status === 'pagada') return; // don't overwrite paid entries
-    await cxpDb.update({ _id: existing._id }, { $set: payload });
+    if (!isContado && existing.status === 'pagada' && existing.plan !== 'al_contado') return;
+    await cxpDb.update({ _id: existing._id }, { $set: { ...payload, status: newStatus, paid_amount: isContado ? gasto.monto : (existing.paid_amount || 0) } });
   } else {
     const number = await nextCxpNumber();
-    await cxpDb.insert({ ...payload, number, status: 'pendiente', paid_amount: 0, created_at: nowHN() });
+    await cxpDb.insert({ ...payload, number, status: newStatus, paid_amount: isContado ? gasto.monto : 0, created_at: nowHN() });
   }
 }
 
 // GET /api/gastos/categorias
 router.get('/categorias', (req, res) => res.json(CATEGORIAS));
+
+// POST /api/gastos/sync-cxp — retroactive backfill
+router.post('/sync-cxp', async (req, res) => {
+  try {
+    const items = await gastosDb.find({});
+    for (const g of items) await syncCxpForGasto(g);
+    res.json({ synced: items.length });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
 
 // GET /api/gastos
 router.get('/', async (req, res) => {

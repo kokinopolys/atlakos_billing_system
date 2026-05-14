@@ -87,9 +87,12 @@ function EntryModal({ entry, onClose, onSave }) {
   )
 }
 
+const FORMAS_COBRO = ['Efectivo', 'Transferencia bancaria', 'Cheque', 'Depósito bancario', 'Tarjeta de débito', 'Tarjeta de crédito', 'Nota de crédito', 'Otro']
+
 function PayModal({ entry, onClose, onPay }) {
-  const [paid, setPaid] = useState(String(entry.amount || ''))
-  const [date, setDate] = useState(new Date().toISOString().slice(0, 10))
+  const [paid,   setPaid]   = useState(String(entry.amount || ''))
+  const [date,   setDate]   = useState(new Date().toISOString().slice(0, 10))
+  const [method, setMethod] = useState('Efectivo')
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm">
@@ -99,11 +102,18 @@ function PayModal({ entry, onClose, onPay }) {
         </div>
         <div className="p-6 space-y-4">
           <p className="text-sm text-gray-600">Cliente: <strong>{entry.client_name}</strong></p>
-          <p className="text-sm text-gray-600">Total pendiente: <strong>{fmt(entry.amount)}</strong></p>
+          <p className="text-sm text-gray-600">Total: <strong>{fmt(entry.amount)}</strong></p>
           <div>
             <label className="block text-xs font-semibold text-gray-500 mb-1">Monto Cobrado (L.)</label>
             <input type="number" step="0.01" min="0" value={paid} onChange={e => setPaid(e.target.value)}
               className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-green-400" />
+          </div>
+          <div>
+            <label className="block text-xs font-semibold text-gray-500 mb-1">Forma de Cobro</label>
+            <select value={method} onChange={e => setMethod(e.target.value)}
+              className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-green-400">
+              {FORMAS_COBRO.map(f => <option key={f} value={f}>{f}</option>)}
+            </select>
           </div>
           <div>
             <label className="block text-xs font-semibold text-gray-500 mb-1">Fecha de Cobro</label>
@@ -112,7 +122,7 @@ function PayModal({ entry, onClose, onPay }) {
           </div>
         </div>
         <div className="flex gap-3 px-6 pb-6">
-          <button onClick={() => onPay({ paid_amount: parseFloat(paid), paid_date: date })}
+          <button onClick={() => onPay({ paid_amount: parseFloat(paid), paid_date: date, payment_method: method })}
             className="flex-1 py-2 text-white font-bold rounded-lg" style={{ backgroundColor: ACCENT }}>
             Confirmar Cobro
           </button>
@@ -128,7 +138,7 @@ export default function CXC() {
   const [resumen, setResumen] = useState({ pendiente: 0, cobrada: 0, vencida: 0 })
   const [loading, setLoading]   = useState(true)
   const [syncing, setSyncing]   = useState(false)
-  const [statusFilter, setStatusFilter] = useState('all')
+  const [statusFilter, setStatusFilter] = useState('pendiente')
   const [search, setSearch]     = useState('')
   const [modal, setModal]       = useState(null)
   const [selected, setSelected] = useState(null)
@@ -137,7 +147,7 @@ export default function CXC() {
     setLoading(true)
     try {
       const [data, sum] = await Promise.all([
-        api.getCXC({ status: statusFilter !== 'all' ? statusFilter : undefined }),
+        api.getCXC(statusFilter !== 'all' ? { status: statusFilter } : {}),
         api.getCXCResumen(),
       ])
       setEntries(Array.isArray(data) ? data : [])
@@ -162,8 +172,8 @@ export default function CXC() {
     setModal(null); setSelected(null); load()
   }
 
-  const handlePay = async ({ paid_amount, paid_date }) => {
-    await api.payCXC(selected._id, { paid_amount, paid_date })
+  const handlePay = async ({ paid_amount, paid_date, payment_method }) => {
+    await api.payCXC(selected._id, { paid_amount, paid_date, payment_method })
     setModal(null); setSelected(null); load()
   }
 
@@ -233,16 +243,16 @@ export default function CXC() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-gray-200 bg-gray-50">
-                  {['No.','Fecha','Vence','Cliente','Descripción','Referencia','Origen','Monto','Estado','Acciones'].map(h => (
+                  {['No.','Fecha','Vence','Cliente','Descripción','Referencia','Origen','Monto','Forma Cobro','Estado','Acciones'].map(h => (
                     <th key={h} className={`px-4 py-3 font-semibold text-gray-600 whitespace-nowrap ${h === 'Monto' ? 'text-right' : h === 'Estado' || h === 'Acciones' || h === 'Origen' ? 'text-center' : 'text-left'}`}>{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
                 {loading ? (
-                  <tr><td colSpan={10} className="text-center py-8 text-gray-400">Cargando...</td></tr>
+                  <tr><td colSpan={11} className="text-center py-8 text-gray-400">Cargando...</td></tr>
                 ) : filtered.length === 0 ? (
-                  <tr><td colSpan={10} className="text-center py-12 text-gray-400">
+                  <tr><td colSpan={11} className="text-center py-12 text-gray-400">
                     <div className="text-4xl mb-2">📭</div>
                     <p>No hay cuentas por cobrar registradas</p>
                   </td></tr>
@@ -260,6 +270,7 @@ export default function CXC() {
                         : <span className="text-xs text-gray-400">Manual</span>}
                     </td>
                     <td className="px-4 py-3 text-right font-semibold text-gray-900 whitespace-nowrap">{fmt(e.amount)}</td>
+                    <td className="px-4 py-3 text-gray-600 text-sm">{e.payment_method || '—'}</td>
                     <td className="px-4 py-3 text-center"><Badge status={e.status} /></td>
                     <td className="px-4 py-3">
                       <div className="flex items-center justify-center gap-1.5">

@@ -102,6 +102,7 @@ export const api = {
   updateCXP:     (id, data)    => put(`${BASE}/cxp/${id}`, data),
   payCXP:        (id, data)    => patch(`${BASE}/cxp/${id}/pay`, data),
   deleteCXP:     (id)          => del(`${BASE}/cxp/${id}`),
+  syncCxp:       ()            => post(`${BASE}/gastos/sync-cxp`, {}),
 
   // Empleados
   getEmpleados:    ()          => get(`${BASE}/empleados`),
